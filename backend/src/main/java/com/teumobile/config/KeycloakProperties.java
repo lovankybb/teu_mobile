@@ -31,6 +31,19 @@ public class KeycloakProperties {
      */
     private String principalAttribute = "preferred_username";
 
+    /**
+     * Client Secret nếu client là confidential (nếu là public client thì để trống)
+     */
+    private String clientSecret;
+
+    /**
+     * Thông tin tài khoản quản trị Keycloak để gọi Admin API tạo tài khoản người dùng
+     */
+    private String adminUsername = "admin";
+    private String adminPassword = "admin";
+    private String adminRealm = "master";
+    private String adminClientId = "admin-cli";
+
     public String getIssuerUri() {
         return baseUrl + "/realms/" + realm;
     }
