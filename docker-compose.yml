@@ -1,0 +1,102 @@
+services:
+  # ========================================================
+  # 1. SQL Server 2022 - Database chính cho Teu Mobile
+  # ========================================================
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: teu-mobile-sqlserver
+    restart: unless-stopped
+    ports:
+      - "${MSSQL_PORT:-1433}:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:-TeuMobile@2026!}"
+      MSSQL_PID: "${MSSQL_PID:-Developer}"
+    volumes:
+      - mssql_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -C -Q \"SELECT 1\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks:
+      - teu-network
+
+  # Service tự động tạo database teu_mobile_db khi SQL Server đã sẵn sàng
+  sqlserver-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: teu-mobile-sqlserver-init
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:-TeuMobile@2026!}"
+    volumes:
+      - ./docker/sqlserver/init-db.sql:/init-db.sql:ro
+    entrypoint: >
+      /bin/bash -c "
+      echo 'Đang kiểm tra và khởi tạo database teu_mobile_db...'
+      /opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P \"$${MSSQL_SA_PASSWORD}\" -C -i /init-db.sql
+      echo 'Khởi tạo database hoàn tất!'
+      "
+    restart: "no"
+    networks:
+      - teu-network
+
+  # ========================================================
+  # 2. Keycloak Database - PostgreSQL 16 Alpine
+  # ========================================================
+  keycloak-db:
+    image: postgres:16-alpine
+    container_name: teu-mobile-keycloak-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "${KEYCLOAK_DB_NAME:-keycloak}"
+      POSTGRES_USER: "${KEYCLOAK_DB_USER:-keycloak}"
+      POSTGRES_PASSWORD: "${KEYCLOAK_DB_PASSWORD:-keycloak_secret}"
+    volumes:
+      - keycloak_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - teu-network
+
+  # ========================================================
+  # 3. Keycloak Identity Provider (Quarkus distribution)
+  # ========================================================
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1.3
+    container_name: teu-mobile-keycloak
+    restart: unless-stopped
+    command: start-dev
+    ports:
+      - "${KEYCLOAK_PORT:-8180}:8080"
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/${KEYCLOAK_DB_NAME:-keycloak}
+      KC_DB_USERNAME: "${KEYCLOAK_DB_USER:-keycloak}"
+      KC_DB_PASSWORD: "${KEYCLOAK_DB_PASSWORD:-keycloak_secret}"
+      KEYCLOAK_ADMIN: "${KEYCLOAK_ADMIN:-admin}"
+      KEYCLOAK_ADMIN_PASSWORD: "${KEYCLOAK_ADMIN_PASSWORD:-admin}"
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    networks:
+      - teu-network
+
+networks:
+  teu-network:
+    name: teu-mobile-network
+    driver: bridge
+
+volumes:
+  mssql_data:
+    name: teu-mobile-mssql-data
+  keycloak_db_data:
+    name: teu-mobile-keycloak-db-data

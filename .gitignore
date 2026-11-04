@@ -1,0 +1,25 @@
+# Environment Variables & Secrets
+.env
+*.env.local
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Maven & Java
+target/
+*.class
+*.jar
+*.war
+
+# Node & Frontend
+node_modules/
+dist/
+.vite/
