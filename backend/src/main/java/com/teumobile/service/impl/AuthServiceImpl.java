@@ -71,7 +71,7 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("Email '" + request.getEmail() + "' đã được sử dụng");
         }
 
-        // 2. Lấy Access Token của Keycloak Admin (từ Realm master)
+        // 2. Lấy Access Token của Keycloak bằng client_credentials
         String adminToken = getAdminAccessToken();
 
         // 3. Chuẩn bị payload tạo User trên Keycloak
@@ -181,20 +181,32 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * Lấy Admin Token từ Realm master của Keycloak
+     * Lấy Access Token bằng grant_type client_credentials từ Realm của ứng dụng để gọi Keycloak Admin API
      */
     private String getAdminAccessToken() {
         Map<String, String> formParams = new HashMap<>();
-        formParams.put("grant_type", "password");
-        formParams.put("client_id", keycloakProperties.getAdminClientId());
-        formParams.put("username", keycloakProperties.getAdminUsername());
-        formParams.put("password", keycloakProperties.getAdminPassword());
+        formParams.put("grant_type", "client_credentials");
+        formParams.put("client_id", keycloakProperties.getClientId());
+        formParams.put("scope", "openid");
+        if (keycloakProperties.getClientSecret() != null && !keycloakProperties.getClientSecret().isBlank()) {
+            formParams.put("client_secret", keycloakProperties.getClientSecret());
+        }
 
-        KeycloakTokenResponse tokenResponse = authFeignClient.getToken(
-                keycloakProperties.getAdminRealm(),
-                formParams
-        );
-        return tokenResponse.getAccessToken();
+        log.info(keycloakProperties.getClientId());
+        log.info(keycloakProperties.getRealm());
+        log.info("Secret: " + keycloakProperties.getClientSecret());
+
+
+        try {
+            KeycloakTokenResponse tokenResponse = authFeignClient.getToken(
+                    keycloakProperties.getRealm(),
+                    formParams
+            );
+            return tokenResponse.getAccessToken();
+        } catch (Exception ex) {
+            log.error("Lỗi khi kết nối Keycloak bằng client_credentials: {}", ex.getMessage());
+            throw new RuntimeException("Không thể xác thực với Keycloak bằng client_credentials: " + ex.getMessage(), ex);
+        }
     }
 
     private TokenResponseDto mapToTokenResponseDto(KeycloakTokenResponse response) {

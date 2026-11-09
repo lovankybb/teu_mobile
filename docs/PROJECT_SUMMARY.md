@@ -59,7 +59,7 @@ Backend đóng vai trò Gateway nhận request từ React và dùng OpenFeign g�
   - `POST /realms/{realm}/protocol/openid-connect/token`: Đăng nhập cấp phát JWT (`grant_type=password`) và làm mới token (`grant_type=refresh_token`).
   - `POST /realms/{realm}/protocol/openid-connect/logout`: Thu hồi session.
 - `KeycloakAdminFeignClient`:
-  - `POST /admin/realms/{realm}/users`: Tạo tài khoản người dùng trực tiếp trên Keycloak qua Admin Token.
+  - `POST /admin/realms/{realm}/users`: Tạo tài khoản người dùng trực tiếp trên Keycloak qua Service Access Token được cấp bằng `client_credentials` (`client_id` và `client_secret` của Realm ứng dụng).
   - `GET /admin/realms/{realm}/users`: Tìm kiếm người dùng.
 - `AuthService`: Tự động đồng bộ tài khoản vừa tạo trên Keycloak vào bảng `users` của SQL Server.
 

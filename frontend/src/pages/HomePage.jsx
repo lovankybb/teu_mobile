@@ -87,7 +87,7 @@ export default function HomePage() {
                     Khám phá ngay
                   </Button>
                 </Link>
-                <Button variant="outline" size="lg" className="bg-transparent text-white border-white/20 hover:bg-white/10">
+                <Button variant="secondary" size="lg" className="bg-transparent text-white border-white/20 hover:bg-white/10">
                   Xem khuyến mãi
                 </Button>
               </div>

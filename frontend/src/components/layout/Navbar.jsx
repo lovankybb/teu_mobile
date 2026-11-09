@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { Smartphone, Search, ShoppingBag, User, LogOut, Settings } from 'lucide-react';
-import Button from '../ui/Button';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { Search, ShoppingBag, User, LogOut, Settings } from "lucide-react";
+import logo from "../../assets/logo.png";
+import Button from "../ui/Button";
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -12,7 +13,7 @@ export default function Navbar() {
   const handleLogout = async () => {
     await logout();
     setDropdownOpen(false);
-    navigate('/login');
+    navigate("/login");
   };
 
   return (
@@ -20,13 +21,16 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20 gap-4">
           {/* Logo Brand */}
-          <Link to="/" className="flex items-center gap-2 group flex-shrink-0">
-            <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-black shadow-md shadow-red-500/25 group-hover:scale-105 transition-transform">
-              <Smartphone className="w-5 h-5" />
+          <Link to="/" className="flex items-center group flex-shrink-0">
+            <img
+              src={logo}
+              alt="TEU Mobile"
+              className="h-20 sm:h-12 w-auto object-contain group-hover:scale-105 transition-transform"
+            />
+            <div className="ml-2 mt-5">
+              <span className="font-bold text-2xl text-red-500">TẾU</span>
+              <span className="font-thin text-xl ml-2">Mobile</span>
             </div>
-            <span className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
-              TEU<span className="text-primary">.MOBILE</span>
-            </span>
           </Link>
 
           {/* Search bar */}
@@ -43,9 +47,18 @@ export default function Navbar() {
 
           {/* Navigation Links */}
           <nav className="hidden lg:flex items-center gap-6 text-sm font-semibold text-slate-700">
-            <Link to="/" className="hover:text-primary transition-colors">Điện thoại</Link>
-            <Link to="/" className="hover:text-primary transition-colors">Phụ kiện</Link>
-            <Link to="/" className="hover:text-primary transition-colors">Khuyến mãi <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-red-100 text-primary font-bold">HOT</span></Link>
+            <Link to="/" className="hover:text-primary transition-colors">
+              Điện thoại
+            </Link>
+            <Link to="/" className="hover:text-primary transition-colors">
+              Phụ kiện
+            </Link>
+            <Link to="/" className="hover:text-primary transition-colors">
+              Khuyến mãi{" "}
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-red-100 text-primary font-bold">
+                HOT
+              </span>
+            </Link>
           </nav>
 
           {/* Right Action Icons & User Profile */}
@@ -69,7 +82,7 @@ export default function Navbar() {
                     {user?.fullName || user?.username}
                   </span>
                   <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary font-bold text-xs flex items-center justify-center">
-                    {user?.fullName ? user.fullName[0].toUpperCase() : 'U'}
+                    {user?.fullName ? user.fullName[0].toUpperCase() : "U"}
                   </div>
                 </button>
 
@@ -77,8 +90,12 @@ export default function Navbar() {
                 {dropdownOpen && (
                   <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white border border-slate-100 shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                     <div className="px-4 py-2 border-b border-slate-100">
-                      <p className="text-xs font-medium text-slate-400">Đã đăng nhập với</p>
-                      <p className="text-sm font-bold text-slate-800 truncate">{user?.email}</p>
+                      <p className="text-xs font-medium text-slate-400">
+                        Đã đăng nhập với
+                      </p>
+                      <p className="text-sm font-bold text-slate-800 truncate">
+                        {user?.email}
+                      </p>
                     </div>
 
                     <Link

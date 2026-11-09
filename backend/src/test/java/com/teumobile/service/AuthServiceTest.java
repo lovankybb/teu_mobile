@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -56,12 +57,9 @@ class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
-        lenient().when(keycloakProperties.getClientId()).thenReturn("teu-mobile-web");
+        lenient().when(keycloakProperties.getClientId()).thenReturn("teu-mobile-client");
         lenient().when(keycloakProperties.getRealm()).thenReturn("teu-mobile-realm");
-        lenient().when(keycloakProperties.getAdminClientId()).thenReturn("admin-cli");
-        lenient().when(keycloakProperties.getAdminUsername()).thenReturn("admin");
-        lenient().when(keycloakProperties.getAdminPassword()).thenReturn("admin");
-        lenient().when(keycloakProperties.getAdminRealm()).thenReturn("master");
+        lenient().when(keycloakProperties.getClientSecret()).thenReturn("mock-client-secret");
     }
 
     @Test
@@ -105,11 +103,11 @@ class AuthServiceTest {
         when(userRepository.existsByUsername("newcustomer")).thenReturn(false);
         when(userRepository.existsByEmail("customer@gmail.com")).thenReturn(false);
 
-        // Giả lập lấy admin token
+        // Giả lập lấy token client_credentials
         KeycloakTokenResponse adminTokenResponse = KeycloakTokenResponse.builder()
                 .accessToken("mock-admin-token")
                 .build();
-        when(authFeignClient.getToken(eq("master"), any(Map.class))).thenReturn(adminTokenResponse);
+        when(authFeignClient.getToken(eq("teu-mobile-realm"), any(Map.class))).thenReturn(adminTokenResponse);
 
         // Giả lập response từ Keycloak Admin createUser có Location Header
         HttpHeaders headers = new HttpHeaders();
@@ -143,6 +141,15 @@ class AuthServiceTest {
         assertEquals("keycloak-user-uuid-888", result.getKeycloakId());
         assertEquals("newcustomer", result.getUsername());
         verify(userRepository, times(1)).save(any(User.class));
+
+        // Kiểm tra Feign Client được gọi với đúng grant_type client_credentials
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Map<String, ?>> formCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(authFeignClient, times(1)).getToken(eq("teu-mobile-realm"), formCaptor.capture());
+        Map<String, ?> capturedParams = formCaptor.getValue();
+        assertEquals("client_credentials", capturedParams.get("grant_type"));
+        assertEquals("teu-mobile-client", capturedParams.get("client_id"));
+        assertEquals("mock-client-secret", capturedParams.get("client_secret"));
     }
 
     @Test
