@@ -17,7 +17,7 @@ import java.util.Map;
 public interface KeycloakAuthFeignClient {
 
     /**
-     * Gọi Keycloak Token Endpoint để cấp phát token (password grant, refresh_token grant, client_credentials)
+     * Gọi Keycloak Token Endpoint để cấp phát token (client_credentials grant)
      */
     @PostMapping(
             value = "/realms/{realm}/protocol/openid-connect/token",
@@ -25,18 +25,6 @@ public interface KeycloakAuthFeignClient {
             produces = MediaType.APPLICATION_JSON_VALUE
     )
     KeycloakTokenResponse getToken(
-            @PathVariable("realm") String realm,
-            Map<String, ?> formParams
-    );
-
-    /**
-     * Gọi Keycloak Logout Endpoint để thu hồi phiên
-     */
-    @PostMapping(
-            value = "/realms/{realm}/protocol/openid-connect/logout",
-            consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE
-    )
-    void logout(
             @PathVariable("realm") String realm,
             Map<String, ?> formParams
     );

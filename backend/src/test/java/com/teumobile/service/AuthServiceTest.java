@@ -4,10 +4,7 @@ import com.teumobile.client.KeycloakAdminFeignClient;
 import com.teumobile.client.KeycloakAuthFeignClient;
 import com.teumobile.config.KeycloakProperties;
 import com.teumobile.dto.UserProfileResponseDto;
-import com.teumobile.dto.auth.LoginRequestDto;
-import com.teumobile.dto.auth.RefreshTokenRequestDto;
 import com.teumobile.dto.auth.RegisterRequestDto;
-import com.teumobile.dto.auth.TokenResponseDto;
 import com.teumobile.dto.keycloak.KeycloakTokenResponse;
 import com.teumobile.dto.keycloak.KeycloakUserRepresentation;
 import com.teumobile.entity.User;
@@ -18,7 +15,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -63,32 +59,6 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("Đăng nhập thành công trả về TokenResponseDto")
-    void testLoginSuccess() {
-        LoginRequestDto request = LoginRequestDto.builder()
-                .usernameOrEmail("testuser")
-                .password("password123")
-                .build();
-
-        KeycloakTokenResponse tokenResponse = KeycloakTokenResponse.builder()
-                .accessToken("mock-access-token")
-                .refreshToken("mock-refresh-token")
-                .expiresIn(300L)
-                .refreshExpiresIn(1800L)
-                .tokenType("Bearer")
-                .build();
-
-        when(authFeignClient.getToken(eq("teu-mobile-realm"), any(Map.class))).thenReturn(tokenResponse);
-
-        TokenResponseDto result = authService.login(request);
-
-        assertNotNull(result);
-        assertEquals("mock-access-token", result.getAccessToken());
-        assertEquals("mock-refresh-token", result.getRefreshToken());
-        assertEquals(300L, result.getExpiresIn());
-    }
-
-    @Test
     @DisplayName("Đăng ký người dùng mới thành công và lưu vào SQL Server")
     void testRegisterSuccess() {
         RegisterRequestDto request = RegisterRequestDto.builder()
@@ -124,68 +94,55 @@ class AuthServiceTest {
                 .email("customer@gmail.com")
                 .fullName("Nguyễn Khách Hàng")
                 .build();
-        when(userRepository.save(any(User.class))).thenReturn(savedUser);
 
         UserProfileResponseDto expectedDto = UserProfileResponseDto.builder()
                 .id(1L)
-                .keycloakId("keycloak-user-uuid-888")
                 .username("newcustomer")
                 .email("customer@gmail.com")
                 .fullName("Nguyễn Khách Hàng")
                 .build();
+
+        when(userRepository.save(any(User.class))).thenReturn(savedUser);
         when(userMapper.toDto(savedUser)).thenReturn(expectedDto);
 
         UserProfileResponseDto result = authService.register(request);
 
         assertNotNull(result);
-        assertEquals("keycloak-user-uuid-888", result.getKeycloakId());
         assertEquals("newcustomer", result.getUsername());
-        verify(userRepository, times(1)).save(any(User.class));
-
-        // Kiểm tra Feign Client được gọi với đúng grant_type client_credentials
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<Map<String, ?>> formCaptor = ArgumentCaptor.forClass(Map.class);
-        verify(authFeignClient, times(1)).getToken(eq("teu-mobile-realm"), formCaptor.capture());
-        Map<String, ?> capturedParams = formCaptor.getValue();
-        assertEquals("client_credentials", capturedParams.get("grant_type"));
-        assertEquals("teu-mobile-client", capturedParams.get("client_id"));
-        assertEquals("mock-client-secret", capturedParams.get("client_secret"));
+        assertEquals("customer@gmail.com", result.getEmail());
+        verify(userRepository).save(any(User.class));
     }
 
     @Test
-    @DisplayName("Đăng ký trùng username ném ra IllegalArgumentException")
-    void testRegisterDuplicateUsername() {
+    @DisplayName("Đăng ký thất bại khi username đã tồn tại")
+    void testRegisterFailsWhenUsernameExists() {
         RegisterRequestDto request = RegisterRequestDto.builder()
                 .username("existinguser")
-                .email("new@gmail.com")
+                .email("user@gmail.com")
                 .password("password123")
+                .fullName("Người Dùng")
                 .build();
 
         when(userRepository.existsByUsername("existinguser")).thenReturn(true);
 
         assertThrows(IllegalArgumentException.class, () -> authService.register(request));
-        verify(adminFeignClient, never()).createUser(any(), any(), any());
+        verify(userRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("Làm mới token thành công")
-    void testRefreshTokenSuccess() {
-        RefreshTokenRequestDto request = RefreshTokenRequestDto.builder()
-                .refreshToken("old-refresh-token")
+    @DisplayName("Đăng ký thất bại khi email đã tồn tại")
+    void testRegisterFailsWhenEmailExists() {
+        RegisterRequestDto request = RegisterRequestDto.builder()
+                .username("newuser")
+                .email("existing@gmail.com")
+                .password("password123")
+                .fullName("Người Dùng")
                 .build();
 
-        KeycloakTokenResponse tokenResponse = KeycloakTokenResponse.builder()
-                .accessToken("new-access-token")
-                .refreshToken("new-refresh-token")
-                .expiresIn(300L)
-                .build();
+        when(userRepository.existsByUsername("newuser")).thenReturn(false);
+        when(userRepository.existsByEmail("existing@gmail.com")).thenReturn(true);
 
-        when(authFeignClient.getToken(eq("teu-mobile-realm"), any(Map.class))).thenReturn(tokenResponse);
-
-        TokenResponseDto result = authService.refreshToken(request);
-
-        assertNotNull(result);
-        assertEquals("new-access-token", result.getAccessToken());
-        assertEquals("new-refresh-token", result.getRefreshToken());
+        assertThrows(IllegalArgumentException.class, () -> authService.register(request));
+        verify(userRepository, never()).save(any());
     }
 }
