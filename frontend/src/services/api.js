@@ -1,5 +1,10 @@
+/**
+ * api.js
+ * Axios instance với interceptor tự động đính kèm Bearer Token từ keycloak-js.
+ * Token sống trong memory (keycloak.token) — không còn dùng localStorage.
+ */
 import axios from 'axios';
-import { keycloakRefreshToken } from './keycloak';
+import keycloak from './keycloak';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
@@ -11,12 +16,18 @@ const api = axios.create({
 });
 
 // ─── Request Interceptor ────────────────────────────────────────────────────
-// Tự động đính kèm Bearer token (access_token lấy trực tiếp từ Keycloak) vào Header
+// Tự động đính kèm Bearer token từ Keycloak instance (in-memory, không localStorage)
 api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+  async (config) => {
+    if (keycloak.authenticated) {
+      // Refresh token nếu còn dưới 30 giây — tránh gửi request với token hết hạn
+      try {
+        await keycloak.updateToken(30);
+      } catch {
+        // Token không thể refresh → Keycloak sẽ handle qua onTokenExpired
+        console.warn('[API] Không thể refresh token trước request');
+      }
+      config.headers.Authorization = `Bearer ${keycloak.token}`;
     }
     return config;
   },
@@ -24,39 +35,18 @@ api.interceptors.request.use(
 );
 
 // ─── Response Interceptor ───────────────────────────────────────────────────
-// Tự động làm mới token khi nhận 401 Unauthorized – gọi thẳng Keycloak (không qua backend)
+// Nếu nhận 401 → redirect về Keycloak login
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config;
-
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      const refreshToken = localStorage.getItem('refresh_token');
-
-      if (refreshToken) {
-        try {
-          // Gọi thẳng Keycloak token endpoint
-          const tokenData = await keycloakRefreshToken(refreshToken);
-
-          const { access_token, refresh_token: newRefreshToken } = tokenData;
-          localStorage.setItem('access_token', access_token);
-          if (newRefreshToken) {
-            localStorage.setItem('refresh_token', newRefreshToken);
-          }
-
-          originalRequest.headers.Authorization = `Bearer ${access_token}`;
-          return api(originalRequest);
-        } catch (refreshErr) {
-          // Refresh token hết hạn → xóa session và chuyển về trang đăng nhập
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          localStorage.removeItem('user_info');
-          window.location.href = '/login';
-        }
+    if (error.response?.status === 401) {
+      // Token thực sự không hợp lệ → yêu cầu đăng nhập lại
+      try {
+        await keycloak.updateToken(-1); // Force refresh
+      } catch {
+        keycloak.login({ redirectUri: window.location.href });
       }
     }
-
     return Promise.reject(error);
   }
 );

@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import AuthLayout from '../../components/layout/AuthLayout';
-import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
-import Checkbox from '../../components/ui/Checkbox';
 import { useAuth } from '../../context/AuthContext';
-import { AlertCircle, ArrowRight } from 'lucide-react';
+import { ArrowRight, ShieldCheck } from 'lucide-react';
 
 // ─── Google Icon (multi-color SVG) ───────────────────────────────────────────
 function GoogleIcon() {
@@ -37,57 +35,19 @@ function OrDivider() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function LoginPage() {
-  const navigate = useNavigate();
   const { login } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [formData, setFormData] = useState({
-    usernameOrEmail: '',
-    password: '',
-    rememberMe: false,
-  });
-
-  const [errors, setErrors]           = useState({});
-  const [serverError, setServerError] = useState('');
-  const [isLoading, setIsLoading]     = useState(false);
-
-  // ─── Handlers ─────────────────────────────────────────────────────────────
-  const handleChange = (e) => {
-    const { id, value, type, checked } = e.target;
-    setFormData((prev) => ({ ...prev, [id]: type === 'checkbox' ? checked : value }));
-    if (errors[id])    setErrors((prev) => ({ ...prev, [id]: '' }));
-    if (serverError)   setServerError('');
-  };
-
-  const validate = () => {
-    const newErrors = {};
-    if (!formData.usernameOrEmail.trim())
-      newErrors.usernameOrEmail = 'Vui lòng nhập email hoặc tên đăng nhập';
-    if (!formData.password)
-      newErrors.password = 'Vui lòng nhập mật khẩu';
-    else if (formData.password.length < 6)
-      newErrors.password = 'Mật khẩu phải có tối thiểu 6 ký tự';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validate()) return;
+  // Trigger redirect sang trang login Keycloak (Auth Code + PKCE)
+  const handleLogin = () => {
     setIsLoading(true);
-    setServerError('');
-    try {
-      await login(formData.usernameOrEmail.trim(), formData.password);
-      navigate('/');
-    } catch (err) {
-      // Keycloak trả "Invalid user credentials" → hiển thị thân thiện hơn
-      const raw = err?.message || '';
-      const msg = raw.toLowerCase().includes('invalid user credentials')
-        ? 'Tên đăng nhập hoặc mật khẩu không chính xác.'
-        : raw || 'Đăng nhập thất bại. Vui lòng thử lại.';
-      setServerError(msg);
-    } finally {
-      setIsLoading(false);
-    }
+    login(); // redirect — trang này sẽ unmount, không cần setIsLoading(false)
+  };
+
+  // Đăng nhập Google qua Keycloak Identity Broker
+  const handleGoogleLogin = () => {
+    setIsLoading(true);
+    login(); // Keycloak sẽ hiển thị option Google nếu đã cấu hình IdP
   };
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -101,99 +61,52 @@ export default function LoginPage() {
             WELCOME BACK
           </h1>
           <p className="text-slate-500 text-sm mt-2 font-normal leading-relaxed">
-            Chào mừng trở lại! Vui lòng nhập thông tin đăng nhập.
+            Chào mừng trở lại! Nhấn đăng nhập để tiếp tục.
           </p>
         </div>
 
-        {/* ── Server Error Banner ── */}
-        {serverError && (
-          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm flex items-start gap-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
-            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-500" />
-            <span>{serverError}</span>
-          </div>
-        )}
+        {/* ── Security Badge ── */}
+        <div className="mb-6 p-3.5 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center gap-2.5">
+          <ShieldCheck className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+          <p className="text-xs text-emerald-700 font-medium">
+            Đăng nhập bảo mật qua <span className="font-bold">Keycloak</span> với mã hóa PKCE — thông tin của bạn được bảo vệ tuyệt đối.
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit} noValidate className="space-y-5">
+        <div className="space-y-3">
+          {/* ── Primary CTA — redirect Keycloak ── */}
+          <Button
+            type="button"
+            variant="primary"
+            size="lg"
+            className="w-full group"
+            isLoading={isLoading}
+            onClick={handleLogin}
+          >
+            {!isLoading && (
+              <>
+                Đăng nhập
+                <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-0.5 transition-transform" />
+              </>
+            )}
+          </Button>
 
-          {/* ── Email / Username ── */}
-          <Input
-            id="usernameOrEmail"
-            label="Email hoặc Tên đăng nhập"
-            type="text"
-            placeholder="Nhập email hoặc tên đăng nhập"
-            value={formData.usernameOrEmail}
-            onChange={handleChange}
-            error={errors.usernameOrEmail}
-            autoComplete="username"
-            required
-          />
+          {/* ── Divider ── */}
+          <OrDivider />
 
-          {/* ── Password ── */}
-          <Input
-            id="password"
-            label="Mật khẩu"
-            type="password"
-            placeholder="••••••••••••"
-            value={formData.password}
-            onChange={handleChange}
-            error={errors.password}
-            autoComplete="current-password"
-            required
-          />
-
-          {/* ── Remember me & Forgot password ── */}
-          <div className="flex items-center justify-between pt-1">
-            <Checkbox
-              id="rememberMe"
-              label="Ghi nhớ đăng nhập"
-              checked={formData.rememberMe}
-              onChange={handleChange}
-            />
-            <Link
-              to="/forgot-password"
-              className="text-xs font-semibold text-slate-700 hover:text-primary transition-colors"
-            >
-              Quên mật khẩu?
-            </Link>
-          </div>
-
-          {/* ── Primary CTA ── */}
-          <div className="pt-2 space-y-3">
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              className="w-full group"
-              isLoading={isLoading}
-            >
-              {!isLoading && (
-                <>
-                  Đăng nhập
-                  <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-0.5 transition-transform" />
-                </>
-              )}
-            </Button>
-
-            {/* ── Divider ── */}
-            <OrDivider />
-
-            {/* ── Google Sign-in (OAuth2 / Keycloak Identity Broker) ── */}
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              className="w-full"
-              onClick={() =>
-                alert(
-                  'Chức năng đăng nhập Google đang được tích hợp qua Keycloak Identity Broker. Vui lòng cấu hình Google IdP trong Keycloak Admin Console!'
-                )
-              }
-            >
-              <GoogleIcon />
-              <span>Tiếp tục với Google</span>
-            </Button>
-          </div>
-        </form>
+          {/* ── Google Sign-in (Keycloak Identity Broker) ── */}
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className="w-full"
+            onClick={handleGoogleLogin}
+            disabled={isLoading}
+          >
+            <GoogleIcon />
+            <span>Tiếp tục với Google</span>
+          </Button>
+        </div>
 
         {/* ── Footer: link tới Register ── */}
         <p className="mt-8 text-center text-xs text-slate-500 font-normal">
