@@ -84,6 +84,10 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: "${KEYCLOAK_ADMIN_PASSWORD:-admin}"
       KC_HEALTH_ENABLED: "true"
       KC_METRICS_ENABLED: "true"
+      KC_SPI_THEME_DEFAULT_CACHE_THEMES: "false"
+      KC_SPI_THEME_DEFAULT_CACHE_TEMPLATES: "false"
+    volumes:
+      - ./docker/keycloak/themes:/opt/keycloak/themes
     depends_on:
       keycloak-db:
         condition: service_healthy

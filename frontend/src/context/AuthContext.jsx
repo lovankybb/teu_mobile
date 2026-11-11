@@ -17,16 +17,16 @@ import React, {
   useEffect,
   useCallback,
   useRef,
-} from 'react';
-import keycloak from '../services/keycloak';
-import api from '../services/api';
+} from "react";
+import keycloak from "../services/keycloak";
+import api from "../services/api";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser]       = useState(null);   // Profile từ backend
-  const [loading, setLoading] = useState(true);   // Đang khởi tạo Keycloak
-  const initialized           = useRef(false);    // Tránh init 2 lần (React StrictMode)
+  const [user, setUser] = useState(null); // Profile từ backend
+  const [loading, setLoading] = useState(true); // Đang khởi tạo Keycloak
+  const initialized = useRef(false); // Tránh init 2 lần (React StrictMode)
 
   // ─── Khởi tạo Keycloak một lần duy nhất khi app mount ───────────────────
   useEffect(() => {
@@ -35,10 +35,11 @@ export function AuthProvider({ children }) {
 
     keycloak
       .init({
-        onLoad:            'check-sso',   // Không force redirect — chỉ kiểm tra session
-        silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
-        pkceMethod:        'S256',        // PKCE với SHA-256 — bắt buộc với public client
-        checkLoginIframe:  false,         // Tránh vấn đề cross-origin iframe trên một số browser
+        onLoad: "check-sso", // Không force redirect — chỉ kiểm tra session
+        silentCheckSsoRedirectUri:
+          window.location.origin + "/silent-check-sso.html",
+        pkceMethod: "S256", // PKCE với SHA-256 — bắt buộc với public client
+        checkLoginIframe: false, // Tránh vấn đề cross-origin iframe trên một số browser
       })
       .then(async (authenticated) => {
         if (authenticated) {
@@ -46,7 +47,7 @@ export function AuthProvider({ children }) {
         }
       })
       .catch((err) => {
-        console.error('[Keycloak] Khởi tạo thất bại:', err);
+        console.error("[Keycloak] Khởi tạo thất bại:", err);
       })
       .finally(() => {
         setLoading(false);
@@ -54,25 +55,23 @@ export function AuthProvider({ children }) {
 
     // Callback khi token được refresh tự động
     keycloak.onTokenExpired = () => {
-      keycloak
-        .updateToken(30)
-        .catch(() => {
-          console.warn('[Keycloak] Không thể refresh token, đăng xuất.');
-          clearSession();
-        });
+      keycloak.updateToken(30).catch(() => {
+        console.warn("[Keycloak] Không thể refresh token, đăng xuất.");
+        clearSession();
+      });
     };
 
     // Callback khi bị đăng xuất từ Keycloak (SSO logout từ app khác)
     keycloak.onAuthLogout = () => {
       clearSession();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ─── Lấy profile từ backend sau khi xác thực thành công ─────────────────
   const loadUserProfile = useCallback(async () => {
     try {
-      const res = await api.get('/users/me');
+      const res = await api.get("/users/me");
       if (res.data?.success && res.data?.data) {
         setUser(res.data.data);
       }
@@ -82,11 +81,11 @@ export function AuthProvider({ children }) {
       if (keycloak.tokenParsed) {
         setUser({
           username: keycloak.tokenParsed.preferred_username,
-          email:    keycloak.tokenParsed.email,
+          email: keycloak.tokenParsed.email,
           fullName: keycloak.tokenParsed.name,
         });
       }
-      console.warn('[Auth] Chưa lấy được profile từ backend:', err?.message);
+      console.warn("[Auth] Chưa lấy được profile từ backend:", err?.message);
     }
   }, []);
 
@@ -98,26 +97,27 @@ export function AuthProvider({ children }) {
   // ─── Đăng Nhập — redirect sang trang login của Keycloak ─────────────────
   const login = useCallback((redirectUri) => {
     keycloak.login({
-      redirectUri: redirectUri || window.location.origin + '/',
+      redirectUri: redirectUri || window.location.origin + "/",
     });
   }, []);
 
   // ─── Đăng Xuất — Keycloak thu hồi session và redirect về app ────────────
   const logout = useCallback(() => {
     clearSession();
+    console.log(window.location.origin + "/");
     keycloak.logout({
-      redirectUri: window.location.origin + '/',
+      redirectUri: window.location.origin + "/",
     });
   }, [clearSession]);
 
   // ─── Đăng Ký — vẫn gọi backend để tạo user (Keycloak Admin API) ─────────
   const register = useCallback(async (registerData) => {
-    const res = await api.post('/auth/register', registerData);
+    const res = await api.post("/auth/register", registerData);
     if (res.data?.success) {
       // Sau khi đăng ký thành công → redirect đến trang login Keycloak
       keycloak.login({
-        redirectUri: window.location.origin + '/',
-        loginHint:   registerData.username,
+        redirectUri: window.location.origin + "/",
+        loginHint: registerData.username,
       });
     }
     return res.data;
@@ -125,7 +125,7 @@ export function AuthProvider({ children }) {
 
   // ─── Cập nhật profile ────────────────────────────────────────────────────
   const updateProfile = useCallback(async (profileData) => {
-    const res = await api.put('/users/me', profileData);
+    const res = await api.put("/users/me", profileData);
     if (res.data?.success && res.data?.data) {
       setUser(res.data.data);
     }
@@ -136,22 +136,18 @@ export function AuthProvider({ children }) {
     user,
     loading,
     isAuthenticated: keycloak.authenticated ?? false,
-    keycloak,         // Expose instance nếu cần dùng trực tiếp
+    keycloak, // Expose instance nếu cần dùng trực tiếp
     login,
     logout,
     register,
     updateProfile,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth phải được dùng bên trong <AuthProvider>');
+  if (!ctx) throw new Error("useAuth phải được dùng bên trong <AuthProvider>");
   return ctx;
 }

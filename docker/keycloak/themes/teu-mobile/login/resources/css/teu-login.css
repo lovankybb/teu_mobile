@@ -1,0 +1,713 @@
+/* ==========================================================================
+   TEU MOBILE - KEYCLOAK CUSTOM LOGIN THEME STYLES
+   Design System: Minimalist High-Tech with Dynamic Energy
+   Colors: Coral Red (#EA384D), Slate 900 (#0F172A), Pure White (#FFFFFF)
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --primary: #EA384D;
+  --primary-hover: #D92D41;
+  --primary-light: rgba(234, 56, 77, 0.1);
+  --primary-ring: rgba(234, 56, 77, 0.2);
+  --slate-900: #0F172A;
+  --slate-800: #1E293B;
+  --slate-700: #334155;
+  --slate-500: #64748B;
+  --slate-400: #94A3B8;
+  --slate-200: #E2E8F0;
+  --slate-100: #F1F5F9;
+  --slate-50: #F8FAFC;
+  --white: #FFFFFF;
+  --font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--white);
+  color: var(--slate-700);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ─── Main Container: Split-Screen Layout ──────────────────────────────────── */
+.teu-auth-wrapper {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  background-color: var(--white);
+}
+
+/* ─── Left Column: Form Panel ─────────────────────────────────────────────── */
+.teu-form-panel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 32px 24px;
+  overflow-y: auto;
+}
+
+@media (min-width: 640px) {
+  .teu-form-panel {
+    padding: 40px 48px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .teu-form-panel {
+    width: 48%;
+    padding: 48px 64px;
+  }
+}
+
+/* Brand Header */
+.teu-brand-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.teu-brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  transition: transform 0.2s ease;
+}
+
+.teu-brand-logo:hover {
+  transform: scale(1.02);
+}
+
+.teu-brand-logo img {
+  height: 48px;
+  width: auto;
+  object-fit: contain;
+}
+
+.teu-brand-title {
+  display: flex;
+  align-items: baseline;
+}
+
+.teu-brand-title .bold {
+  font-weight: 800;
+  font-size: 26px;
+  color: var(--primary);
+  letter-spacing: -0.02em;
+}
+
+.teu-brand-title .light {
+  font-weight: 400;
+  font-size: 18px;
+  color: var(--slate-700);
+  margin-left: 6px;
+}
+
+.teu-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--slate-500);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.teu-back-link:hover {
+  color: var(--primary);
+}
+
+/* Language Switcher */
+.teu-lang-select {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--slate-500);
+  background: var(--slate-50);
+  border: 1px solid var(--slate-200);
+  border-radius: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+  outline: none;
+}
+
+/* Center Form Box */
+.teu-form-container {
+  width: 100%;
+  max-width: 420px;
+  margin: auto;
+}
+
+/* Title & Subtitle */
+.teu-heading {
+  margin-bottom: 24px;
+}
+
+.teu-heading h1 {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--slate-900);
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.teu-heading p {
+  font-size: 14px;
+  color: var(--slate-500);
+  margin-top: 8px;
+  font-weight: 400;
+}
+
+/* Security Trust Badge */
+.teu-security-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background-color: #ECFDF5;
+  border: 1px solid #D1FAE5;
+  margin-bottom: 22px;
+}
+
+.teu-security-badge svg {
+  width: 20px;
+  height: 20px;
+  color: #10B981;
+  flex-shrink: 0;
+}
+
+.teu-security-badge p {
+  font-size: 12px;
+  color: #047857;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.teu-security-badge strong {
+  font-weight: 700;
+}
+
+/* Keycloak Alert & Feedback Messages */
+.teu-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  margin-bottom: 20px;
+}
+
+.teu-alert-error {
+  background-color: #FEF2F2;
+  border: 1px solid #FEE2E2;
+  color: #B91C1C;
+}
+
+.teu-alert-warning {
+  background-color: #FFFBEB;
+  border: 1px solid #FEF3C7;
+  color: #B45309;
+}
+
+.teu-alert-success {
+  background-color: #ECFDF5;
+  border: 1px solid #D1FAE5;
+  color: #047857;
+}
+
+.teu-alert-info {
+  background-color: #EFF6FF;
+  border: 1px solid #DBEAFE;
+  color: #1D4ED8;
+}
+
+.teu-alert svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Form Groups & Inputs */
+.teu-form-group {
+  margin-bottom: 18px;
+}
+
+.teu-label {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--slate-800);
+  margin-bottom: 6px;
+}
+
+.teu-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.teu-input {
+  width: 100%;
+  height: 48px;
+  padding: 0 16px;
+  background-color: var(--white);
+  border: 1px solid var(--slate-200);
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--slate-900);
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.teu-input::placeholder {
+  color: var(--slate-400);
+}
+
+.teu-input:hover {
+  border-color: #CBD5E1;
+}
+
+.teu-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-ring);
+  background-color: var(--white);
+}
+
+.teu-input.has-error {
+  border-color: #EF4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+/* Password Toggle Button */
+.teu-password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--slate-400);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.teu-password-toggle:hover {
+  color: var(--slate-700);
+}
+
+.teu-input-with-toggle {
+  padding-right: 44px;
+}
+
+/* Actions Row: Remember Me & Forgot Password */
+.teu-form-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  font-size: 13px;
+}
+
+.teu-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--slate-700);
+  font-weight: 500;
+  user-select: none;
+}
+
+.teu-checkbox {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--primary);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.teu-link {
+  color: var(--slate-700);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.teu-link:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.teu-link-primary {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.teu-link-primary:hover {
+  color: var(--primary-hover);
+  text-decoration: underline;
+}
+
+/* Primary Button */
+.teu-btn-primary {
+  width: 100%;
+  height: 48px;
+  background-color: var(--primary);
+  color: var(--white);
+  border: none;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(234, 56, 77, 0.25);
+}
+
+.teu-btn-primary:hover {
+  background-color: var(--primary-hover);
+  box-shadow: 0 6px 16px rgba(234, 56, 77, 0.35);
+  transform: translateY(-1px);
+}
+
+.teu-btn-primary:active {
+  transform: translateY(0);
+}
+
+.teu-btn-primary svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s ease;
+}
+
+.teu-btn-primary:hover svg {
+  transform: translateX(3px);
+}
+
+/* Secondary / Register Button */
+.teu-btn-register {
+  width: 100%;
+  height: 48px;
+  background-color: var(--white);
+  color: var(--primary);
+  border: 1.5px solid var(--primary);
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.teu-btn-register:hover {
+  background-color: var(--primary-light);
+  border-color: var(--primary-hover);
+  color: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.teu-btn-register:active {
+  transform: translateY(0);
+}
+
+/* Divider: HOẶC */
+.teu-divider {
+  position: relative;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.teu-divider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: var(--slate-200);
+}
+
+.teu-divider span {
+  position: relative;
+  background-color: var(--white);
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--slate-400);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Social Login Button (Google) */
+.teu-btn-social {
+  width: 100%;
+  height: 48px;
+  background-color: var(--white);
+  color: var(--slate-700);
+  border: 1px solid var(--slate-200);
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.teu-btn-social:hover {
+  background-color: var(--slate-50);
+  border-color: #CBD5E1;
+  color: var(--slate-900);
+}
+
+.teu-btn-social svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* Form Footer / Registration link */
+.teu-form-footer {
+  margin-top: 28px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--slate-500);
+}
+
+/* Footer Trust Badges */
+.teu-trust-footer {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--slate-100);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--slate-400);
+}
+
+.teu-trust-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.teu-trust-item svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+/* ─── Right Column: Hero Visual Showcase Panel ───────────────────────────── */
+.teu-hero-panel {
+  display: none;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 40px;
+  background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 60%, #CBD5E1 100%);
+}
+
+@media (min-width: 1024px) {
+  .teu-hero-panel {
+    display: flex;
+    width: 52%;
+  }
+}
+
+/* Background animated glow halo */
+.teu-coral-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(234, 56, 77, 0.15) 0%, rgba(234, 56, 77, 0) 70%);
+  pointer-events: none;
+}
+
+/* Glassmorphism Showcase Card */
+.teu-showcase-wrapper {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.teu-showcase-card {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 28px;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.15);
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Tech Pill Badge */
+.teu-tech-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background-color: var(--slate-900);
+  color: var(--white);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 24px;
+}
+
+.teu-tech-badge .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  animation: teu-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes teu-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+/* Phone Mockup */
+.teu-phone-wrapper {
+  width: 175px;
+  height: 280px;
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.teu-phone-wrapper img, .teu-phone-wrapper svg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 20px 25px rgba(15, 23, 42, 0.2));
+}
+
+/* Hero Typography */
+.teu-hero-headline {
+  font-size: 24px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  color: var(--slate-900);
+  line-height: 1.25;
+}
+
+.teu-hero-headline .accent {
+  color: var(--primary);
+}
+
+.teu-hero-desc {
+  font-size: 13.5px;
+  color: var(--slate-500);
+  margin-top: 10px;
+  line-height: 1.5;
+  max-width: 290px;
+}
+
+/* Stats Row */
+.teu-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  width: 100%;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.teu-stat-value {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--slate-900);
+}
+
+.teu-stat-value.accent {
+  color: var(--primary);
+}
+
+.teu-stat-label {
+  font-size: 11px;
+  color: var(--slate-400);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+/* Floating Cyberpunk Badges */
+.teu-floating-tag {
+  position: absolute;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15);
+}
+
+.teu-floating-tag.top-right {
+  top: -16px;
+  right: -16px;
+  background-color: var(--slate-900);
+  color: var(--white);
+}
+
+.teu-floating-tag.bottom-left {
+  bottom: -16px;
+  left: -16px;
+  background-color: var(--primary);
+  color: var(--white);
+}
