@@ -1,0 +1,46 @@
+<svg viewBox="0 0 200 320" xmlns="http://www.w3.org/2000/svg" fill="none">
+  <!-- Dynamic speed lines - Coral accent -->
+  <path d="M5 160 L 25 155" stroke="#EA384D" stroke-width="3" stroke-linecap="round" />
+  <path d="M5 173 L 20 169" stroke="#EA384D" stroke-width="2" stroke-linecap="round" />
+  <path d="M5 186 L 18 183" stroke="#EA384D" stroke-width="1.5" stroke-linecap="round" />
+  <path d="M175 140 L 195 135" stroke="#EA384D" stroke-width="3" stroke-linecap="round" />
+  <path d="M178 153 L 195 150" stroke="#EA384D" stroke-width="2" stroke-linecap="round" />
+
+  <!-- Phone body shadow and outline -->
+  <rect x="30" y="10" width="140" height="300" rx="22" ry="22" fill="#0F172A" />
+  <!-- Screen -->
+  <rect x="38" y="30" width="124" height="250" rx="12" ry="12" fill="#1E293B" />
+  <!-- Status bar -->
+  <rect x="70" y="18" width="60" height="8" rx="4" fill="#334155" />
+  <!-- Screen content lines (simulated UI) -->
+  <rect x="50" y="52" width="100" height="8" rx="4" fill="#EA384D" fill-opacity="0.9" />
+  <rect x="50" y="68" width="70" height="5" rx="2.5" fill="#475569" />
+  <rect x="50" y="80" width="85" height="5" rx="2.5" fill="#475569" />
+  <!-- Product card mock -->
+  <rect x="50" y="98" width="100" height="80" rx="10" fill="#0F172A" stroke="#334155" stroke-width="1.5" />
+  <rect x="58" y="106" width="40" height="40" rx="6" fill="#1E293B" />
+  <rect x="58" y="106" width="40" height="40" rx="6" fill="url(#phoneGrad)" fill-opacity="0.6" />
+  <rect x="106" y="110" width="36" height="5" rx="2.5" fill="#94A3B8" />
+  <rect x="106" y="120" width="28" height="4" rx="2" fill="#64748B" />
+  <rect x="106" y="130" width="32" height="5" rx="2.5" fill="#EA384D" />
+  <!-- Add to cart button -->
+  <rect x="58" y="154" width="84" height="16" rx="8" fill="#EA384D" />
+  <rect x="80" y="159" width="40" height="4" rx="2" fill="white" fill-opacity="0.9" />
+  <!-- Second card (smaller) -->
+  <rect x="50" y="188" width="45" height="52" rx="8" fill="#0F172A" stroke="#334155" stroke-width="1.5" />
+  <rect x="55" y="193" width="35" height="30" rx="5" fill="#1E293B" />
+  <rect x="55" y="228" width="25" height="4" rx="2" fill="#EA384D" />
+  <!-- Third card -->
+  <rect x="105" y="188" width="45" height="52" rx="8" fill="#0F172A" stroke="#334155" stroke-width="1.5" />
+  <rect x="110" y="193" width="35" height="30" rx="5" fill="#1E293B" />
+  <rect x="110" y="228" width="25" height="4" rx="2" fill="#EA384D" />
+  <!-- Home indicator -->
+  <rect x="80" y="295" width="40" height="4" rx="2" fill="#475569" />
+
+  <defs>
+    <linearGradient id="phoneGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EA384D" />
+      <stop offset="100%" stop-color="#0F172A" />
+    </linearGradient>
+  </defs>
+</svg>

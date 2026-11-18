@@ -1,0 +1,10 @@
+<!doctype html>
+<html>
+  <body>
+    <script>
+      // File này được Keycloak dùng để kiểm tra SSO session im lặng (không reload trang).
+      // Phải được serve ở cùng origin với ứng dụng.
+      parent.postMessage(location.href, location.origin);
+    </script>
+  </body>
+</html>
