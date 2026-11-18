@@ -3,9 +3,21 @@
     <#if section = "header">
         ${msg("loginAccountTitle")!"WELCOME BACK"}
     <#elseif section = "info">
-        <p>${msg("loginSubtitle")!"Chào mừng trở lại! Vui lòng đăng nhập để tiếp tục."}</p>
+        <p>${msg("loginSubtitle")!"Welcome back! Please enter your details."}</p>
     <#elseif section = "form">
-        <form id="kc-form-login" onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post">
+        <form id="kc-form-login" action="${url.loginAction}" method="post">
+            <#-- Show field-level error alert if login failed -->
+            <#if messagesPerField.existsError('username','password')>
+                <div class="teu-alert teu-alert-error" role="alert">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <div>${kcSanitize(messagesPerField.getFirstError('username','password'))?no_esc}</div>
+                </div>
+            </#if>
+
             <#if !usernameHidden??>
                 <!-- Username / Email Field -->
                 <div class="teu-form-group">
@@ -13,7 +25,7 @@
                         <#if !realm.loginWithEmailAllowed>
                             ${msg("username")!"Tên đăng nhập"}
                         <#elseif !realm.registrationEmailAsUsername>
-                            ${msg("usernameOrEmail")!"Tên đăng nhập hoặc Email"}
+                            ${msg("usernameOrEmail")!"Email hoặc Tên đăng nhập"}
                         <#else>
                             ${msg("email")!"Email"}
                         </#if>
@@ -27,7 +39,7 @@
                                type="text"
                                autofocus
                                autocomplete="username"
-                               placeholder="user@example.com"
+                               placeholder="${msg('usernamePlaceholder')!'Enter your email'}"
                                aria-invalid="<#if messagesPerField.existsError('username','password')>true</#if>" />
                     </div>
                 </div>
@@ -43,7 +55,7 @@
                            name="password"
                            type="password"
                            autocomplete="current-password"
-                           placeholder="••••••••"
+                           placeholder="${msg('passwordPlaceholder')!'••••••••••'}"
                            aria-invalid="<#if messagesPerField.existsError('username','password')>true</#if>" />
                     <button type="button"
                             id="teu-password-toggle-btn"
@@ -76,7 +88,7 @@
                                type="checkbox"
                                class="teu-checkbox"
                                <#if login.rememberMe??>checked</#if>>
-                        ${msg("rememberMe")!"Ghi nhớ đăng nhập"}
+                        <span>${msg("rememberMe")!"Ghi nhớ đăng nhập"}</span>
                     </label>
                 <#else>
                     <div></div>
@@ -89,29 +101,11 @@
                 </#if>
             </div>
 
-            <!-- Submit Button -->
+            <!-- Submit Button (Primary Solid Coral Red) -->
             <input type="hidden" id="id-hidden-input" name="credentialId" <#if auth.selectedCredential?has_content>value="${auth.selectedCredential}"</#if>/>
             <button tabindex="4" class="teu-btn-primary" name="login" id="kc-login" type="submit">
                 <span>${msg("doLogIn")!"Đăng nhập"}</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                    <polyline points="12 5 19 12 12 19"></polyline>
-                </svg>
             </button>
-
-            <!-- Registration Button & Link -->
-            <#if realm.registrationAllowed && url.registrationUrl??>
-                <#assign registerTargetUrl = url.registrationUrl>
-            <#elseif client?? && client.baseUrl?has_content>
-                <#assign registerTargetUrl = client.baseUrl + "/register">
-            <#else>
-                <#assign registerTargetUrl = "http://localhost:5173/register">
-            </#if>
-            <div style="margin-top: 12px;">
-                <a tabindex="6" href="${registerTargetUrl}" class="teu-btn-register">
-                    <span>${msg("doRegister")!"Tạo tài khoản mới"}</span>
-                </a>
-            </div>
         </form>
     <#elseif section = "socialProviders">
         <#if realm.password && social.providers?? && social.providers?has_content>
@@ -129,7 +123,7 @@
                                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
                                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                             </svg>
-                            <span>Tiếp tục với Google</span>
+                            <span>${msg("signInWithGoogle")!"Đăng nhập với Google"}</span>
                         <#else>
                             <#if p.iconClasses?has_content>
                                 <i class="${p.iconClasses}" aria-hidden="true"></i>
@@ -140,5 +134,22 @@
                 </#list>
             </div>
         </#if>
+
+        <#-- Clean Bottom Registration Link (Matching Figma "Don't have an account? Sign up for free!") -->
+        <#if realm.registrationAllowed && url.registrationUrl??>
+            <#assign registerTargetUrl = url.registrationUrl>
+        <#elseif client?? && client.baseUrl?has_content>
+            <#assign registerTargetUrl = client.baseUrl + "/register">
+        <#elseif client?? && client.rootUrl?has_content>
+            <#assign registerTargetUrl = client.rootUrl + "/register">
+        <#else>
+            <#assign registerTargetUrl = "http://localhost:5173/register">
+        </#if>
+        <p class="teu-form-footer">
+            ${msg("noAccount")!"Chưa có tài khoản?"}
+            <a tabindex="6" href="${registerTargetUrl}" class="teu-link-primary">
+                ${msg("doRegister")!"Đăng ký miễn phí!"}
+            </a>
+        </p>
     </#if>
 </@layout.registrationLayout>

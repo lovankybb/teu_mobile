@@ -22,25 +22,28 @@
     </#if>
 </head>
 <body>
+<#-- Dynamic app / home URL resolution for return navigation -->
+<#assign appHomeUrl = (client.baseUrl?? && client.baseUrl?has_content)?then(client.baseUrl, (client.rootUrl?? && client.rootUrl?has_content)?then(client.rootUrl, "http://localhost:5173/"))>
+
 <div class="teu-auth-wrapper">
     <!-- =======================================================================
-         LEFT COLUMN: FORM PANEL (48% Desktop / 100% Mobile)
+         LEFT COLUMN: FORM PANEL (50% Desktop / 100% Mobile)
          ======================================================================= -->
     <div class="teu-form-panel">
-        <!-- Brand Header -->
+        <!-- Brand Header (Compact & refined, kept per user request) -->
         <div class="teu-brand-header">
-            <a href="/" class="teu-brand-logo" aria-label="TEU Mobile">
-                <img src="${url.resourcesPath}/img/logo.svg" alt="TEU Mobile Logo" onerror="this.onerror=null; this.src='${url.resourcesPath}/img/logo.png';" />
+            <a href="${appHomeUrl}" class="teu-brand-logo" aria-label="TEU Mobile">
+                <img src="${url.resourcesPath}/img/logo.png" alt="TEU Mobile Logo" onerror="this.onerror=null; this.src='${url.resourcesPath}/img/logo.png';" />
                 <div class="teu-brand-title">
                     <span class="bold">TẾU</span>
                     <span class="light">Mobile</span>
                 </div>
             </a>
 
-            <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="teu-header-actions">
                 <#if realm.internationalizationEnabled?? && realm.internationalizationEnabled && (locale.supported?size gt 1)>
                     <div class="teu-lang-wrapper">
-                        <select class="teu-lang-select" onchange="window.location.href=this.value;">
+                        <select class="teu-lang-select" onchange="window.location.href=this.value;" aria-label="Ngôn ngữ / Language">
                             <#list locale.supported as l>
                                 <option value="${l.url}" <#if l.languageTag == locale.currentLanguageTag>selected</#if>>
                                     ${l.label}
@@ -49,7 +52,7 @@
                         </select>
                     </div>
                 </#if>
-                <a href="/" class="teu-back-link">
+                <a href="${appHomeUrl}" class="teu-back-link">
                     ${msg("backToHome")!"Về trang chủ"}
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="9 18 15 12 9 6"></polyline>
@@ -68,18 +71,9 @@
                 </#if>
             </div>
 
-            <!-- Security Trust Badge -->
-            <div class="teu-security-badge">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                    <path d="m9 12 2 2 4-4"></path>
-                </svg>
-                <p>${kcSanitize(msg("securityBadgeNotice"))?no_esc}</p>
-            </div>
-
             <!-- Flash Alert Box (Error / Warning / Success / Info) -->
             <#if displayMessage && message?has_content && (message.type != 'warning' || !isAppInitiatedAction??)>
-                <div class="teu-alert teu-alert-${message.type}">
+                <div class="teu-alert teu-alert-${message.type}" role="alert">
                     <#if message.type = 'error'>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
@@ -115,78 +109,16 @@
             <#nested "socialProviders">
         </div>
 
-        <!-- Footer Trust Badges -->
-        <div class="teu-trust-footer">
-            <div class="teu-trust-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                    <path d="m9 12 2 2 4-4"></path>
-                </svg>
-                <span>Bảo mật chuẩn Keycloak OIDC</span>
-            </div>
-            <div class="teu-trust-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                </svg>
-                <span>Đồng bộ tức thì</span>
-            </div>
-            <div class="teu-trust-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#EA384D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-                    <line x1="12" y1="18" x2="12.01" y2="18"></line>
-                </svg>
-                <span>Hàng chính hãng 100%</span>
-            </div>
-        </div>
+        <!-- Footer Spacer (Ensures clean flex alignment without vertical overflow) -->
+        <div class="teu-footer-spacer"></div>
     </div>
 
     <!-- =======================================================================
-         RIGHT COLUMN: HERO VISUAL SHOWCASE PANEL (52% Desktop / Hidden on Mobile)
+         RIGHT COLUMN: HERO VISUAL SHOWCASE PANEL (Matching Figma Design)
          ======================================================================= -->
     <div class="teu-hero-panel" aria-hidden="true">
-        <div class="teu-coral-glow"></div>
-
-        <div class="teu-showcase-wrapper">
-            <div class="teu-showcase-card">
-                <!-- Tech Badge -->
-                <div class="teu-tech-badge">
-                    <span class="dot"></span>
-                    Next-Gen Experience
-                </div>
-
-                <!-- Phone Mockup Illustration -->
-                <div class="teu-phone-wrapper">
-                    <img src="${url.resourcesPath}/img/phone-illustration.svg" alt="Phone Showcase" />
-                </div>
-
-                <!-- Headline -->
-                <h2 class="teu-hero-headline">
-                    MUA SẮM <span class="accent">ĐỈNH CAO</span>
-                </h2>
-                <p class="teu-hero-desc">
-                    Điện thoại &amp; phụ kiện công nghệ chính hãng. Trải nghiệm mua sắm mượt mà, bảo mật tuyệt đối.
-                </p>
-
-                <!-- Stats Grid -->
-                <div class="teu-stats-grid">
-                    <div>
-                        <div class="teu-stat-value">100%</div>
-                        <div class="teu-stat-label">Chính hãng</div>
-                    </div>
-                    <div>
-                        <div class="teu-stat-value accent">24/7</div>
-                        <div class="teu-stat-label">Hỗ trợ</div>
-                    </div>
-                    <div>
-                        <div class="teu-stat-value">0%</div>
-                        <div class="teu-stat-label">Trả góp</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Floating Cyberpunk Badges -->
-            <div class="teu-floating-tag top-right">Hot Deal 🔥</div>
-            <div class="teu-floating-tag bottom-left">Freeship toàn quốc</div>
+        <div class="teu-hero-bg-artwork">
+            <img src="${url.resourcesPath}/img/hero-artwork.png" alt="Teu Mobile Hero" class="teu-hero-img" />
         </div>
     </div>
 </div>

@@ -6,6 +6,16 @@
         <p>${msg("emailInstruction")!"Nhập email hoặc tên tài khoản của bạn để nhận liên kết đặt lại mật khẩu."}</p>
     <#elseif section = "form">
         <form id="kc-reset-password-form" action="${url.loginAction}" method="post">
+            <#if messagesPerField.existsError('username')>
+                <div class="teu-alert teu-alert-error" role="alert">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <div>${kcSanitize(messagesPerField.getFirstError('username'))?no_esc}</div>
+                </div>
+            </#if>
             <div class="teu-form-group">
                 <label for="username" class="teu-label">
                     <#if !realm.loginWithEmailAllowed>

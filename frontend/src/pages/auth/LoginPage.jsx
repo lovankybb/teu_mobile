@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import AuthLayout from '../../components/layout/AuthLayout';
 import Button from '../../components/ui/Button';
 import { useAuth } from '../../context/AuthContext';
-import { ArrowRight, ShieldCheck } from 'lucide-react';
 
 // ─── Google Icon (multi-color SVG) ───────────────────────────────────────────
 function GoogleIcon() {
@@ -20,12 +19,12 @@ function GoogleIcon() {
 // ─── Divider ─────────────────────────────────────────────────────────────────
 function OrDivider() {
   return (
-    <div className="relative my-1">
+    <div className="relative my-2">
       <div className="absolute inset-0 flex items-center">
         <div className="w-full border-t border-slate-200" />
       </div>
       <div className="relative flex justify-center">
-        <span className="bg-white px-3 text-xs text-slate-400 font-medium tracking-wide">
+        <span className="bg-white px-3 text-xs text-slate-400 font-semibold tracking-wider uppercase">
           HOẶC
         </span>
       </div>
@@ -54,22 +53,13 @@ export default function LoginPage() {
   return (
     <AuthLayout>
       <div className="w-full">
-
         {/* ── Title & Subtitle ── */}
         <div className="mb-8">
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight uppercase font-sans">
             WELCOME BACK
           </h1>
           <p className="text-slate-500 text-sm mt-2 font-normal leading-relaxed">
-            Chào mừng trở lại! Nhấn đăng nhập để tiếp tục.
-          </p>
-        </div>
-
-        {/* ── Security Badge ── */}
-        <div className="mb-6 p-3.5 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center gap-2.5">
-          <ShieldCheck className="w-5 h-5 text-emerald-500 flex-shrink-0" />
-          <p className="text-xs text-emerald-700 font-medium">
-            Đăng nhập bảo mật qua <span className="font-bold">Keycloak</span> với mã hóa PKCE — thông tin của bạn được bảo vệ tuyệt đối.
+            Chào mừng trở lại! Vui lòng đăng nhập để tiếp tục.
           </p>
         </div>
 
@@ -79,16 +69,11 @@ export default function LoginPage() {
             type="button"
             variant="primary"
             size="lg"
-            className="w-full group"
+            className="w-full h-12 text-[15px] font-semibold"
             isLoading={isLoading}
             onClick={handleLogin}
           >
-            {!isLoading && (
-              <>
-                Đăng nhập
-                <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-0.5 transition-transform" />
-              </>
-            )}
+            Đăng nhập
           </Button>
 
           {/* ── Divider ── */}
@@ -99,7 +84,7 @@ export default function LoginPage() {
             type="button"
             variant="outline"
             size="lg"
-            className="w-full"
+            className="w-full h-12 border-slate-200 text-slate-700 font-semibold text-sm hover:bg-slate-50"
             onClick={handleGoogleLogin}
             disabled={isLoading}
           >
@@ -109,7 +94,7 @@ export default function LoginPage() {
         </div>
 
         {/* ── Footer: link tới Register ── */}
-        <p className="mt-8 text-center text-xs text-slate-500 font-normal">
+        <p className="mt-8 text-center text-sm text-slate-500 font-normal">
           Chưa có tài khoản?{' '}
           <Link
             to="/register"

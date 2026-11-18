@@ -1,6 +1,6 @@
 /* ==========================================================================
    TEU MOBILE - KEYCLOAK CUSTOM LOGIN THEME STYLES
-   Design System: Minimalist High-Tech with Dynamic Energy
+   Design System: Minimalist High-Tech with Dynamic Energy (Matching Figma)
    Colors: Coral Red (#EA384D), Slate 900 (#0F172A), Pure White (#FFFFFF)
    ========================================================================== */
 
@@ -53,45 +53,48 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 32px 24px;
+  padding: 24px 20px;
+  min-height: 100vh;
   overflow-y: auto;
 }
 
 @media (min-width: 640px) {
   .teu-form-panel {
-    padding: 40px 48px;
+    padding: 32px 40px;
   }
 }
 
 @media (min-width: 1024px) {
   .teu-form-panel {
-    width: 48%;
-    padding: 48px 64px;
+    width: 50%;
+    padding: 36px 56px;
+    height: 100vh;
   }
 }
 
-/* Brand Header */
+/* Brand Header (Compact & refined) */
 .teu-brand-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 28px;
+  margin-bottom: 20px;
+  flex-shrink: 0;
 }
 
 .teu-brand-logo {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   text-decoration: none;
-  transition: transform 0.2s ease;
+  transition: opacity 0.15s ease;
 }
 
 .teu-brand-logo:hover {
-  transform: scale(1.02);
+  opacity: 0.85;
 }
 
 .teu-brand-logo img {
-  height: 48px;
+  height: 32px;
   width: auto;
   object-fit: contain;
 }
@@ -103,16 +106,22 @@ body {
 
 .teu-brand-title .bold {
   font-weight: 800;
-  font-size: 26px;
+  font-size: 20px;
   color: var(--primary);
   letter-spacing: -0.02em;
 }
 
 .teu-brand-title .light {
-  font-weight: 400;
-  font-size: 18px;
+  font-weight: 500;
+  font-size: 15px;
   color: var(--slate-700);
-  margin-left: 6px;
+  margin-left: 4px;
+}
+
+.teu-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .teu-back-link {
@@ -134,20 +143,26 @@ body {
 .teu-lang-select {
   font-size: 12px;
   font-weight: 600;
-  color: var(--slate-500);
+  color: var(--slate-600);
   background: var(--slate-50);
   border: 1px solid var(--slate-200);
   border-radius: 8px;
   padding: 4px 8px;
   cursor: pointer;
   outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.teu-lang-select:hover, .teu-lang-select:focus {
+  border-color: var(--primary);
 }
 
 /* Center Form Box */
 .teu-form-container {
   width: 100%;
-  max-width: 420px;
+  max-width: 400px;
   margin: auto;
+  padding: 12px 0;
 }
 
 /* Title & Subtitle */
@@ -156,7 +171,7 @@ body {
 }
 
 .teu-heading h1 {
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 800;
   color: var(--slate-900);
   letter-spacing: -0.02em;
@@ -167,38 +182,9 @@ body {
 .teu-heading p {
   font-size: 14px;
   color: var(--slate-500);
-  margin-top: 8px;
+  margin-top: 6px;
   font-weight: 400;
-}
-
-/* Security Trust Badge */
-.teu-security-badge {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background-color: #ECFDF5;
-  border: 1px solid #D1FAE5;
-  margin-bottom: 22px;
-}
-
-.teu-security-badge svg {
-  width: 20px;
-  height: 20px;
-  color: #10B981;
-  flex-shrink: 0;
-}
-
-.teu-security-badge p {
-  font-size: 12px;
-  color: #047857;
-  font-weight: 500;
   line-height: 1.4;
-}
-
-.teu-security-badge strong {
-  font-weight: 700;
 }
 
 /* Keycloak Alert & Feedback Messages */
@@ -206,7 +192,7 @@ body {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  padding: 12px 16px;
+  padding: 12px 14px;
   border-radius: 12px;
   font-size: 13px;
   line-height: 1.4;
@@ -363,6 +349,8 @@ body {
 .teu-link-primary {
   color: var(--primary);
   font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s ease;
 }
 
 .teu-link-primary:hover {
@@ -370,7 +358,7 @@ body {
   text-decoration: underline;
 }
 
-/* Primary Button */
+/* Primary Button (Solid Coral Red) */
 .teu-btn-primary {
   width: 100%;
   height: 48px;
@@ -385,14 +373,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(234, 56, 77, 0.25);
+  box-shadow: 0 4px 14px rgba(234, 56, 77, 0.25);
 }
 
 .teu-btn-primary:hover {
   background-color: var(--primary-hover);
-  box-shadow: 0 6px 16px rgba(234, 56, 77, 0.35);
+  box-shadow: 0 6px 18px rgba(234, 56, 77, 0.35);
   transform: translateY(-1px);
 }
 
@@ -400,17 +387,7 @@ body {
   transform: translateY(0);
 }
 
-.teu-btn-primary svg {
-  width: 16px;
-  height: 16px;
-  transition: transform 0.2s ease;
-}
-
-.teu-btn-primary:hover svg {
-  transform: translateX(3px);
-}
-
-/* Secondary / Register Button */
+/* Secondary / Register Button (if used on other pages) */
 .teu-btn-register {
   width: 100%;
   height: 48px;
@@ -425,7 +402,6 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
   text-decoration: none;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -437,11 +413,7 @@ body {
   transform: translateY(-1px);
 }
 
-.teu-btn-register:active {
-  transform: translateY(0);
-}
-
-/* Divider: HOẶC */
+/* Divider: HOẶC / OR */
 .teu-divider {
   position: relative;
   margin: 20px 0;
@@ -503,211 +475,48 @@ body {
 
 /* Form Footer / Registration link */
 .teu-form-footer {
-  margin-top: 28px;
+  margin-top: 24px;
   text-align: center;
-  font-size: 13px;
+  font-size: 13.5px;
   color: var(--slate-500);
 }
 
-/* Footer Trust Badges */
-.teu-trust-footer {
-  margin-top: 32px;
-  padding-top: 20px;
-  border-top: 1px solid var(--slate-100);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 12px;
-  color: var(--slate-400);
-}
-
-.teu-trust-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.teu-trust-item svg {
-  width: 15px;
-  height: 15px;
+.teu-footer-spacer {
+  height: 20px;
   flex-shrink: 0;
 }
 
-/* ─── Right Column: Hero Visual Showcase Panel ───────────────────────────── */
+/* ─── Right Column: Hero Visual Showcase Panel (Figma Design) ───────────── */
 .teu-hero-panel {
   display: none;
   position: relative;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: 40px;
-  background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 60%, #CBD5E1 100%);
+  background-color: #F1F5F9;
 }
 
 @media (min-width: 1024px) {
   .teu-hero-panel {
     display: flex;
-    width: 52%;
+    width: 50%;
+    height: 100vh;
   }
 }
 
-/* Background animated glow halo */
-.teu-coral-glow {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 420px;
-  height: 420px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(234, 56, 77, 0.15) 0%, rgba(234, 56, 77, 0) 70%);
-  pointer-events: none;
-}
-
-/* Glassmorphism Showcase Card */
-.teu-showcase-wrapper {
-  position: relative;
-  z-index: 10;
-  width: 100%;
-  max-width: 380px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.teu-showcase-card {
-  width: 100%;
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  border-radius: 28px;
-  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.15);
-  padding: 32px 28px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-/* Tech Pill Badge */
-.teu-tech-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  border-radius: 9999px;
-  background-color: var(--slate-900);
-  color: var(--white);
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 24px;
-}
-
-.teu-tech-badge .dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background-color: var(--primary);
-  animation: teu-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes teu-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.85); }
-}
-
-/* Phone Mockup */
-.teu-phone-wrapper {
-  width: 175px;
-  height: 280px;
-  position: relative;
-  margin-bottom: 16px;
-}
-
-.teu-phone-wrapper img, .teu-phone-wrapper svg {
+.teu-hero-bg-artwork {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 20px 25px rgba(15, 23, 42, 0.2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #F1F5F9;
 }
 
-/* Hero Typography */
-.teu-hero-headline {
-  font-size: 24px;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
-  color: var(--slate-900);
-  line-height: 1.25;
-}
-
-.teu-hero-headline .accent {
-  color: var(--primary);
-}
-
-.teu-hero-desc {
-  font-size: 13.5px;
-  color: var(--slate-500);
-  margin-top: 10px;
-  line-height: 1.5;
-  max-width: 290px;
-}
-
-/* Stats Row */
-.teu-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+.teu-hero-img {
   width: 100%;
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(226, 232, 240, 0.9);
-}
-
-.teu-stat-value {
-  font-size: 17px;
-  font-weight: 800;
-  color: var(--slate-900);
-}
-
-.teu-stat-value.accent {
-  color: var(--primary);
-}
-
-.teu-stat-label {
-  font-size: 11px;
-  color: var(--slate-400);
-  font-weight: 500;
-  margin-top: 2px;
-}
-
-/* Floating Cyberpunk Badges */
-.teu-floating-tag {
-  position: absolute;
-  padding: 6px 12px;
-  border-radius: 9999px;
-  font-size: 10.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15);
-}
-
-.teu-floating-tag.top-right {
-  top: -16px;
-  right: -16px;
-  background-color: var(--slate-900);
-  color: var(--white);
-}
-
-.teu-floating-tag.bottom-left {
-  bottom: -16px;
-  left: -16px;
-  background-color: var(--primary);
-  color: var(--white);
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
 }

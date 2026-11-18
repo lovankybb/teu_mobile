@@ -1,52 +1,60 @@
 /**
  * TEU Mobile - Keycloak Login Script
- * Handles password visibility toggling and interactive UX.
+ * Handles password visibility toggling, accessibility, and form UX.
  */
 
 document.addEventListener('DOMContentLoaded', function () {
-  // ─── 1. Password Visibility Toggle ──────────────────────────────────────
-  const toggleBtn = document.getElementById('teu-password-toggle-btn');
-  const passwordInput = document.getElementById('password');
-
-  if (toggleBtn && passwordInput) {
-    toggleBtn.addEventListener('click', function (e) {
+  // ─── 1. Password Visibility Toggle (for all password fields) ─────────────
+  const toggleBtns = document.querySelectorAll('.teu-password-toggle');
+  toggleBtns.forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
       e.preventDefault();
-      const isPassword = passwordInput.getAttribute('type') === 'password';
-      passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+      const wrapper = btn.closest('.teu-input-wrapper');
+      if (!wrapper) return;
+      const input = wrapper.querySelector('input');
+      if (!input) return;
 
-      // Update toggle icon (Eye vs Eye-Off)
-      const eyeIcon = toggleBtn.querySelector('.eye-open');
-      const eyeOffIcon = toggleBtn.querySelector('.eye-closed');
+      const isPassword = input.getAttribute('type') === 'password';
+      input.setAttribute('type', isPassword ? 'text' : 'password');
 
-      if (eyeIcon && eyeOffIcon) {
+      const eyeOpen = btn.querySelector('.eye-open');
+      const eyeClosed = btn.querySelector('.eye-closed');
+      if (eyeOpen && eyeClosed) {
         if (isPassword) {
-          eyeIcon.style.display = 'none';
-          eyeOffIcon.style.display = 'block';
+          eyeOpen.style.display = 'none';
+          eyeClosed.style.display = 'block';
         } else {
-          eyeIcon.style.display = 'block';
-          eyeOffIcon.style.display = 'none';
+          eyeOpen.style.display = 'block';
+          eyeClosed.style.display = 'none';
         }
       }
+      input.focus();
     });
-  }
+  });
 
   // ─── 2. Auto-focus First Empty Input ────────────────────────────────────
   const usernameInput = document.getElementById('username');
+  const passwordInput = document.getElementById('password');
   if (usernameInput && !usernameInput.value) {
     usernameInput.focus();
-  } else if (passwordInput) {
+  } else if (passwordInput && !passwordInput.value) {
     passwordInput.focus();
   }
 
-  // ─── 3. Double-submit Prevention ─────────────────────────────────────────
-  const loginForm = document.getElementById('kc-form-login');
-  const submitBtn = document.getElementById('kc-login');
+  // ─── 3. Safe Form Submit Loading Feedback ────────────────────────────────
+  const loginForm = document.getElementById('kc-form-login') || document.querySelector('form');
+  const submitBtn = document.getElementById('kc-login') || (loginForm ? loginForm.querySelector('button[type="submit"]') : null);
 
   if (loginForm && submitBtn) {
     loginForm.addEventListener('submit', function () {
-      submitBtn.disabled = true;
-      submitBtn.style.opacity = '0.75';
-      submitBtn.style.cursor = 'not-allowed';
+      if (typeof loginForm.checkValidity === 'function' && !loginForm.checkValidity()) {
+        return; // Let browser HTML5 validation trigger
+      }
+      // Apply subtle loading effect without disabling button immediately to prevent dropped submit values
+      setTimeout(function () {
+        submitBtn.style.opacity = '0.8';
+        submitBtn.style.pointerEvents = 'none';
+      }, 50);
     });
   }
 });
