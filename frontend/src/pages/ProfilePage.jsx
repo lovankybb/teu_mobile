@@ -2,14 +2,18 @@ import React, { useState, useEffect, useRef } from 'react';
 import Navbar from '../components/layout/Navbar';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
+import AddressList from '../components/address/AddressList';
 import { useAuth } from '../context/AuthContext';
-import { User, Mail, Phone, MapPin, CheckCircle, AlertCircle, Camera, Loader2 } from 'lucide-react';
+import { User, Mail, Phone, MapPin, CheckCircle, AlertCircle, Camera, Loader2, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function ProfilePage() {
   const { user, isAuthenticated, loading, login, updateProfile, uploadAvatar } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+
+  // Tab điều hướng: 'account' (Thông tin tài khoản) | 'addresses' (Sổ địa chỉ)
+  const [activeTab, setActiveTab] = useState('account');
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -220,81 +224,122 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Alert Messages */}
-          {message && (
-            <div className="mt-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
-              <span>{message}</span>
+          {/* Navigation Tabs (Thông tin tài khoản vs Sổ địa chỉ) */}
+          <div className="flex items-center gap-2 mt-6 p-1.5 bg-slate-100/80 rounded-2xl border border-slate-200/60 max-w-sm">
+            <button
+              type="button"
+              onClick={() => setActiveTab('account')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                activeTab === 'account'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <User className="w-4 h-4" />
+              Thông tin cá nhân
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('addresses')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                activeTab === 'addresses'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <MapPin className="w-4 h-4" />
+              Sổ địa chỉ
+            </button>
+          </div>
+
+          {/* Nội dung Tab 1: Thông tin cá nhân */}
+          {activeTab === 'account' && (
+            <div className="mt-6">
+              {/* Alert Messages */}
+              {message && (
+                <div className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                  <span>{message}</span>
+                </div>
+              )}
+
+              {error && (
+                <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  {/* Tên đăng nhập (Readonly) */}
+                  <Input
+                    label="Tên đăng nhập"
+                    value={user?.username || ''}
+                    disabled
+                    helperText="Tên đăng nhập được quản lý bởi Keycloak"
+                  />
+
+                  {/* Email (Readonly) */}
+                  <Input
+                    label="Địa chỉ Email"
+                    value={user?.email || ''}
+                    disabled
+                    helperText="Email định danh bảo mật OIDC"
+                  />
+                </div>
+
+                <Input
+                  id="fullName"
+                  label="Họ và tên hiển thị"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  placeholder="Nguyễn Văn A"
+                  required
+                />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <Input
+                    id="phoneNumber"
+                    label="Số điện thoại nhận hàng"
+                    type="tel"
+                    value={formData.phoneNumber}
+                    onChange={handleChange}
+                    placeholder="0912 345 678"
+                    helperText="Định dạng số điện thoại Việt Nam 10 chữ số"
+                  />
+
+                  <Input
+                    id="address"
+                    label="Địa chỉ giao hàng mặc định"
+                    value={formData.address}
+                    onChange={handleChange}
+                    placeholder="Số nhà, đường, quận/huyện, tỉnh thành"
+                    helperText="Được đồng bộ tự động từ Sổ địa chỉ"
+                  />
+                </div>
+
+                <div className="pt-4 flex justify-end">
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    size="md"
+                    isLoading={isUpdating}
+                  >
+                    Lưu thay đổi
+                  </Button>
+                </div>
+              </form>
             </div>
           )}
 
-          {error && (
-            <div className="mt-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-              <span>{error}</span>
+          {/* Nội dung Tab 2: Sổ địa chỉ */}
+          {activeTab === 'addresses' && (
+            <div className="mt-6">
+              <AddressList />
             </div>
           )}
-
-          {/* Form Thông tin người dùng */}
-          <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              {/* Tên đăng nhập (Readonly) */}
-              <Input
-                label="Tên đăng nhập"
-                value={user?.username || ''}
-                disabled
-                helperText="Tên đăng nhập được quản lý bởi Keycloak"
-              />
-
-              {/* Email (Readonly) */}
-              <Input
-                label="Địa chỉ Email"
-                value={user?.email || ''}
-                disabled
-                helperText="Email định danh bảo mật OIDC"
-              />
-            </div>
-
-            <Input
-              id="fullName"
-              label="Họ và tên hiển thị"
-              value={formData.fullName}
-              onChange={handleChange}
-              placeholder="Nguyễn Văn A"
-              required
-            />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <Input
-                id="phoneNumber"
-                label="Số điện thoại nhận hàng"
-                type="tel"
-                value={formData.phoneNumber}
-                onChange={handleChange}
-                placeholder="0912 345 678"
-                helperText="Định dạng số điện thoại Việt Nam 10 chữ số"
-              />
-
-              <Input
-                id="address"
-                label="Địa chỉ giao hàng mặc định"
-                value={formData.address}
-                onChange={handleChange}
-                placeholder="Số nhà, đường, quận/huyện, tỉnh thành"
-              />
-            </div>
-
-            <div className="pt-4 flex justify-end">
-              <Button
-                type="submit"
-                variant="primary"
-                size="md"
-                isLoading={isUpdating}
-              >
-                Lưu thay đổi
-              </Button>
-            </div>
-          </form>
         </div>
       </main>
     </div>
