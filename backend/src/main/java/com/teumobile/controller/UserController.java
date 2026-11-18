@@ -1,9 +1,7 @@
 package com.teumobile.controller;
 
-import com.teumobile.dto.ApiResponse;
-import com.teumobile.dto.UserProfileResponseDto;
-import com.teumobile.dto.UserSyncRequestDto;
-import com.teumobile.dto.UserUpdateRequestDto;
+import com.teumobile.dto.*;
+import com.teumobile.service.CloudinaryService;
 import com.teumobile.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final CloudinaryService cloudinaryService;
 
     /**
      * Lấy thông tin hồ sơ của tài khoản đang đăng nhập
@@ -53,6 +52,28 @@ public class UserController {
     ) {
         UserProfileResponseDto updatedProfile = userService.updateProfile(jwt, updateDto);
         return ResponseEntity.ok(ApiResponse.success(updatedProfile, "Cập nhật thông tin cá nhân thành công"));
+    }
+
+    /**
+     * API xin chữ ký bảo mật (signature, timestamp, apiKey, cloudName, folder)
+     * để Frontend gửi thẳng file ảnh lên Cloudinary
+     */
+    @GetMapping("/avatar/signature")
+    public ResponseEntity<ApiResponse<CloudinarySignatureResponseDto>> getAvatarUploadSignature() {
+        CloudinarySignatureResponseDto signatureDto = cloudinaryService.generateAvatarUploadSignature();
+        return ResponseEntity.ok(ApiResponse.success(signatureDto, "Tạo chữ ký upload Cloudinary thành công"));
+    }
+
+    /**
+     * Cập nhật URL ảnh đại diện sau khi Frontend upload trực tiếp lên Cloudinary thành công
+     */
+    @PatchMapping("/me/avatar")
+    public ResponseEntity<ApiResponse<UserProfileResponseDto>> updateAvatar(
+            @AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody AvatarUpdateRequestDto requestDto
+    ) {
+        UserProfileResponseDto updatedProfile = userService.updateAvatar(jwt, requestDto.getAvatarUrl());
+        return ResponseEntity.ok(ApiResponse.success(updatedProfile, "Cập nhật ảnh đại diện thành công"));
     }
 
     /**

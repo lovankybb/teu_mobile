@@ -59,6 +59,11 @@ app:
     allowed-methods: GET,POST,PUT,DELETE,OPTIONS,PATCH
     allowed-headers: "*"
     allow-credentials: true
+  cloudinary:
+    cloud-name: ${CLOUDINARY_CLOUD_NAME:rndy8ej4}
+    api-key: ${CLOUDINARY_API_KEY:853478995944645}
+    api-secret: ${CLOUDINARY_API_SECRET:EmtQLfpSmyaNBJV9oJE34RozIoI}
+    folder: ${CLOUDINARY_FOLDER:teu-mobile/avatars}
 
 feign:
   client:

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import AuthLayout from '../../components/layout/AuthLayout';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
@@ -8,7 +8,7 @@ import { AlertCircle } from 'lucide-react';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register, login } = useAuth();
 
   const [formData, setFormData] = useState({
     username: '',
@@ -197,12 +197,13 @@ export default function RegisterPage() {
         {/* Footer chuyển sang Đăng nhập */}
         <p className="mt-6 text-center text-xs text-slate-500 font-normal">
           Already have an account?{' '}
-          <Link
-            to="/login"
-            className="text-primary hover:underline font-semibold transition-colors"
+          <button
+            type="button"
+            onClick={() => login()}
+            className="text-primary hover:underline font-semibold transition-colors bg-transparent border-0 p-0 cursor-pointer"
           >
             Sign in here!
-          </Link>
+          </button>
         </p>
       </div>
     </AuthLayout>

@@ -2,7 +2,6 @@ import React from 'react';
 import Navbar from '../components/layout/Navbar';
 import Button from '../components/ui/Button';
 import { Smartphone, Zap, Shield, Truck, ShoppingCart, Star } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 const FEATURED_PRODUCTS = [
   {
@@ -82,14 +81,16 @@ export default function HomePage() {
               </p>
 
               <div className="mt-8 flex flex-wrap items-center gap-4">
-                <Link to="/login">
+                <a href="#featured-products">
                   <Button variant="primary" size="lg">
                     Khám phá ngay
                   </Button>
-                </Link>
-                <Button variant="secondary" size="lg" className="bg-transparent text-white border-white/20 hover:bg-white/10">
-                  Xem khuyến mãi
-                </Button>
+                </a>
+                <a href="#featured-products">
+                  <Button variant="secondary" size="lg" className="bg-transparent text-white border-white/20 hover:bg-white/10">
+                    Xem khuyến mãi
+                  </Button>
+                </a>
               </div>
 
               {/* USP Badges */}
@@ -124,7 +125,7 @@ export default function HomePage() {
       </section>
 
       {/* FEATURED PRODUCTS SECTION */}
-      <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="featured-products" className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-10">
           <div>
             <h2 className="text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-slate-900">

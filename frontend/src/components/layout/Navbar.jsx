@@ -1,19 +1,17 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { Search, ShoppingBag, User, LogOut, Settings } from "lucide-react";
 import logo from "../../assets/logo.png";
 import Button from "../ui/Button";
 
 export default function Navbar() {
-  const { user, isAuthenticated, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user, isAuthenticated, login, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleLogout = async () => {
-    await logout();
     setDropdownOpen(false);
-    navigate("/login");
+    await logout();
   };
 
   return (
@@ -81,21 +79,44 @@ export default function Navbar() {
                   <span className="text-xs font-bold text-slate-800 max-w-[100px] truncate hidden sm:inline">
                     {user?.fullName || user?.username}
                   </span>
-                  <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary font-bold text-xs flex items-center justify-center">
-                    {user?.fullName ? user.fullName[0].toUpperCase() : "U"}
-                  </div>
+                  {user?.avatarUrl ? (
+                    <img
+                      src={user.avatarUrl}
+                      alt={user?.fullName || "Avatar"}
+                      referrerPolicy="no-referrer"
+                      className="w-7 h-7 rounded-lg object-cover ring-1 ring-slate-200/80"
+                    />
+                  ) : (
+                    <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary font-bold text-xs flex items-center justify-center">
+                      {user?.fullName ? user.fullName[0].toUpperCase() : "U"}
+                    </div>
+                  )}
                 </button>
 
                 {/* Dropdown User Menu */}
                 {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white border border-slate-100 shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                    <div className="px-4 py-2 border-b border-slate-100">
-                      <p className="text-xs font-medium text-slate-400">
-                        Đã đăng nhập với
-                      </p>
-                      <p className="text-sm font-bold text-slate-800 truncate">
-                        {user?.email}
-                      </p>
+                  <div className="absolute right-0 mt-2 w-60 rounded-2xl bg-white border border-slate-100 shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-3">
+                      {user?.avatarUrl ? (
+                        <img
+                          src={user.avatarUrl}
+                          alt={user?.fullName || "Avatar"}
+                          referrerPolicy="no-referrer"
+                          className="w-10 h-10 rounded-xl object-cover ring-1 ring-slate-200/80 flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary font-black text-sm flex items-center justify-center flex-shrink-0">
+                          {user?.fullName ? user.fullName[0].toUpperCase() : "U"}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-slate-800 truncate">
+                          {user?.fullName || user?.username}
+                        </p>
+                        <p className="text-[11px] font-medium text-slate-400 truncate">
+                          {user?.email}
+                        </p>
+                      </div>
                     </div>
 
                     <Link
@@ -119,11 +140,9 @@ export default function Navbar() {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <Link to="/login">
-                  <Button variant="ghost" size="sm">
-                    Đăng nhập
-                  </Button>
-                </Link>
+                <Button variant="ghost" size="sm" onClick={() => login()}>
+                  Đăng nhập
+                </Button>
                 <Link to="/register">
                   <Button variant="primary" size="sm">
                     Đăng ký

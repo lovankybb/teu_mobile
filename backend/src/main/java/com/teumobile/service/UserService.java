@@ -23,6 +23,11 @@ public interface UserService {
     UserProfileResponseDto updateProfile(Jwt jwt, UserUpdateRequestDto updateDto);
 
     /**
+     * Cập nhật trực tiếp đường dẫn avatar cho tài khoản người dùng hiện tại
+     */
+    UserProfileResponseDto updateAvatar(Jwt jwt, String avatarUrl);
+
+    /**
      * Lấy thông tin user theo ID (cho Admin hoặc quản trị)
      */
     UserProfileResponseDto getUserById(Long id);

@@ -20,6 +20,7 @@ import React, {
 } from "react";
 import keycloak from "../services/keycloak";
 import api from "../services/api";
+import { uploadAvatarWorkflow } from "../services/cloudinaryService";
 
 const AuthContext = createContext(null);
 
@@ -76,13 +77,26 @@ export function AuthProvider({ children }) {
         setUser(res.data.data);
       }
     } catch (err) {
-      // User chưa sync vào DB (ví dụ: lần đầu đăng nhập qua SSO)
-      // Dùng thông tin cơ bản từ Keycloak token
-      if (keycloak.tokenParsed) {
+      // Trường hợp user lần đầu đăng nhập, gọi sync để Backend khởi tạo từ Access Token
+      if (err.response?.status === 404) {
+        try {
+          const syncRes = await api.post("/users/sync");
+          if (syncRes.data?.success && syncRes.data?.data) {
+            setUser(syncRes.data.data);
+            return;
+          }
+        } catch (syncErr) {
+          console.warn("[Auth] Tự động sync tài khoản vào CSDL thất bại:", syncErr?.message);
+        }
+      }
+
+      // Dùng thông tin cơ bản từ Keycloak token nếu Backend chưa phản hồi
+      if (keycloak.tokenParsed || keycloak.idTokenParsed) {
         setUser({
-          username: keycloak.tokenParsed.preferred_username,
-          email: keycloak.tokenParsed.email,
-          fullName: keycloak.tokenParsed.name,
+          username: keycloak.tokenParsed?.preferred_username || keycloak.idTokenParsed?.preferred_username,
+          email: keycloak.tokenParsed?.email || keycloak.idTokenParsed?.email,
+          fullName: keycloak.tokenParsed?.name || keycloak.idTokenParsed?.name,
+          avatarUrl: keycloak.tokenParsed?.picture || keycloak.idTokenParsed?.picture,
         });
       }
       console.warn("[Auth] Chưa lấy được profile từ backend:", err?.message);
@@ -132,8 +146,16 @@ export function AuthProvider({ children }) {
     return res.data;
   }, []);
 
+  // ─── Tải lên và cập nhật avatar trực tiếp qua Cloudinary ──────────────────
+  const uploadAvatar = useCallback(async (file, onProgress) => {
+    const updatedUser = await uploadAvatarWorkflow(file, onProgress);
+    setUser(updatedUser);
+    return updatedUser;
+  }, []);
+
   const value = {
     user,
+    setUser,
     loading,
     isAuthenticated: keycloak.authenticated ?? false,
     keycloak, // Expose instance nếu cần dùng trực tiếp
@@ -141,6 +163,7 @@ export function AuthProvider({ children }) {
     logout,
     register,
     updateProfile,
+    uploadAvatar,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

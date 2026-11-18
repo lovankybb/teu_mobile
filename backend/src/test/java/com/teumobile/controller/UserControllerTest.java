@@ -3,10 +3,13 @@ package com.teumobile.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.teumobile.config.KeycloakProperties;
 import com.teumobile.config.SecurityConfig;
+import com.teumobile.dto.AvatarUpdateRequestDto;
+import com.teumobile.dto.CloudinarySignatureResponseDto;
 import com.teumobile.dto.UserProfileResponseDto;
 import com.teumobile.dto.UserUpdateRequestDto;
 import com.teumobile.exception.GlobalExceptionHandler;
 import com.teumobile.security.KeycloakJwtAuthenticationConverter;
+import com.teumobile.service.CloudinaryService;
 import com.teumobile.service.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,10 +22,10 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -38,6 +41,9 @@ class UserControllerTest {
 
     @MockBean
     private UserService userService;
+
+    @MockBean
+    private CloudinaryService cloudinaryService;
 
     @Test
     @DisplayName("Endpoint công khai /api/public/health truy cập được không cần Token")
@@ -117,5 +123,77 @@ class UserControllerTest {
                         .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @DisplayName("Xin chữ ký Cloudinary upload khi chưa đăng nhập trả về 401 Unauthorized")
+    void testGetAvatarSignatureUnauthorized() throws Exception {
+        mockMvc.perform(get("/api/users/avatar/signature"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Xin chữ ký Cloudinary upload với Token hợp lệ trả về 200 OK kèm signature và timestamp")
+    void testGetAvatarSignatureAuthorized() throws Exception {
+        CloudinarySignatureResponseDto signatureDto = CloudinarySignatureResponseDto.builder()
+                .signature("sample-sha1-signature-abc123")
+                .timestamp(1731920000L)
+                .apiKey("sample-api-key")
+                .cloudName("sample-cloud")
+                .folder("teu-mobile/avatars")
+                .build();
+
+        when(cloudinaryService.generateAvatarUploadSignature()).thenReturn(signatureDto);
+
+        mockMvc.perform(get("/api/users/avatar/signature")
+                        .with(jwt()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.signature").value("sample-sha1-signature-abc123"))
+                .andExpect(jsonPath("$.data.timestamp").value(1731920000L))
+                .andExpect(jsonPath("$.data.apiKey").value("sample-api-key"))
+                .andExpect(jsonPath("$.data.cloudName").value("sample-cloud"))
+                .andExpect(jsonPath("$.data.folder").value("teu-mobile/avatars"));
+    }
+
+    @Test
+    @DisplayName("Cập nhật avatar với URL hợp lệ thành công trả về 200 OK")
+    void testUpdateAvatarSuccess() throws Exception {
+        String validUrl = "https://res.cloudinary.com/sample-cloud/image/upload/v123/avatar.jpg";
+        AvatarUpdateRequestDto requestDto = AvatarUpdateRequestDto.builder()
+                .avatarUrl(validUrl)
+                .build();
+
+        UserProfileResponseDto responseDto = UserProfileResponseDto.builder()
+                .id(1L)
+                .username("customer_test")
+                .avatarUrl(validUrl)
+                .build();
+
+        when(userService.updateAvatar(any(), eq(validUrl))).thenReturn(responseDto);
+
+        mockMvc.perform(patch("/api/users/me/avatar")
+                        .with(jwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.avatarUrl").value(validUrl));
+    }
+
+    @Test
+    @DisplayName("Cập nhật avatar với URL không hợp lệ trả về 400 Bad Request")
+    void testUpdateAvatarInvalidUrl() throws Exception {
+        AvatarUpdateRequestDto invalidDto = AvatarUpdateRequestDto.builder()
+                .avatarUrl("not-a-valid-url")
+                .build();
+
+        mockMvc.perform(patch("/api/users/me/avatar")
+                        .with(jwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.data.avatarUrl").exists());
     }
 }
