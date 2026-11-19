@@ -43,6 +43,8 @@ public class SecurityConfig {
                                 "/actuator/health",
                                 "/error"
                         ).permitAll()
+                        // Các endpoint quản trị yêu cầu quyền ROLE_ADMIN
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // Tất cả các endpoint còn lại bắt buộc phải có Bearer Token hợp lệ
                         .anyRequest().authenticated()
                 )

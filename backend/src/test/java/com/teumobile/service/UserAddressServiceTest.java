@@ -215,4 +215,176 @@ class UserAddressServiceTest {
         assertTrue(sampleAddress.getIsDefault());
         verify(userRepository).save(sampleUser);
     }
+
+    @Test
+    @DisplayName("Tạo địa chỉ thứ hai với isDefault=false không làm thay đổi địa chỉ mặc định cũ")
+    void testCreateSecondAddressAsNonDefault() {
+        when(userRepository.findByKeycloakId("keycloak-user-uuid-123")).thenReturn(Optional.of(sampleUser));
+        when(userAddressRepository.countByUserId(1L)).thenReturn(1L);
+
+        AddressRequestDto secondReq = AddressRequestDto.builder()
+                .recipientName("Người nhận phụ")
+                .phoneNumber("0912345678")
+                .province("Hà Nội")
+                .district("Đống Đa")
+                .ward("Láng Thượng")
+                .streetAddress("Số 5 Chùa Láng")
+                .isDefault(false)
+                .build();
+
+        UserAddress secondAddr = UserAddress.builder()
+                .id(102L)
+                .user(sampleUser)
+                .recipientName("Người nhận phụ")
+                .isDefault(false)
+                .build();
+
+        AddressResponseDto secondResp = AddressResponseDto.builder()
+                .id(102L)
+                .recipientName("Người nhận phụ")
+                .isDefault(false)
+                .build();
+
+        when(userAddressMapper.toEntity(secondReq)).thenReturn(secondAddr);
+        when(userAddressRepository.save(any(UserAddress.class))).thenReturn(secondAddr);
+        when(userAddressMapper.toDto(secondAddr)).thenReturn(secondResp);
+
+        AddressResponseDto result = userAddressService.createAddress(sampleJwt, secondReq);
+
+        assertNotNull(result);
+        assertFalse(result.getIsDefault());
+        verify(userAddressRepository, never()).unsetDefaultAddressForUser(anyLong());
+        verify(userRepository, never()).save(sampleUser);
+    }
+
+    @Test
+    @DisplayName("Cập nhật thông tin địa chỉ thông thường thành công (giữ nguyên isDefault)")
+    void testUpdateAddressBasicInfo() {
+        when(userRepository.findByKeycloakId("keycloak-user-uuid-123")).thenReturn(Optional.of(sampleUser));
+        sampleAddress.setIsDefault(false);
+        when(userAddressRepository.findByIdAndUserId(100L, 1L)).thenReturn(Optional.of(sampleAddress));
+        when(userAddressRepository.save(sampleAddress)).thenReturn(sampleAddress);
+        when(userAddressMapper.toDto(sampleAddress)).thenReturn(sampleResponseDto);
+
+        AddressRequestDto updateDto = AddressRequestDto.builder()
+                .recipientName("Nguyễn Văn A (Mới)")
+                .phoneNumber("0999888777")
+                .province("Hà Nội")
+                .district("Quận Cầu Giấy")
+                .ward("Phường Dịch Vọng Hậu")
+                .streetAddress("Số 99 Duy Tân")
+                .addressType(AddressType.OFFICE)
+                .isDefault(false)
+                .build();
+
+        AddressResponseDto result = userAddressService.updateAddress(sampleJwt, 100L, updateDto);
+
+        assertNotNull(result);
+        verify(userAddressMapper).updateEntityFromDto(updateDto, sampleAddress);
+        verify(userAddressRepository, never()).unsetDefaultAddressForUser(anyLong());
+        verify(userAddressRepository).save(sampleAddress);
+    }
+
+    @Test
+    @DisplayName("Cập nhật chuyển địa chỉ thành mặc định (wasDefault=false -> wantDefault=true)")
+    void testUpdateAddressChangeToDefault() {
+        when(userRepository.findByKeycloakId("keycloak-user-uuid-123")).thenReturn(Optional.of(sampleUser));
+        sampleAddress.setIsDefault(false);
+        when(userAddressRepository.findByIdAndUserId(100L, 1L)).thenReturn(Optional.of(sampleAddress));
+        when(userAddressRepository.save(sampleAddress)).thenReturn(sampleAddress);
+        when(userAddressMapper.toDto(sampleAddress)).thenReturn(sampleResponseDto);
+
+        AddressRequestDto updateDto = AddressRequestDto.builder()
+                .recipientName("Nguyễn Văn A")
+                .phoneNumber("0912345678")
+                .province("Hà Nội")
+                .district("Quận Cầu Giấy")
+                .ward("Phường Dịch Vọng Hậu")
+                .streetAddress("Số 12 Duy Tân")
+                .isDefault(true)
+                .build();
+
+        AddressResponseDto result = userAddressService.updateAddress(sampleJwt, 100L, updateDto);
+
+        assertNotNull(result);
+        verify(userAddressRepository).unsetDefaultAddressForUser(1L);
+        assertTrue(sampleAddress.getIsDefault());
+        verify(userRepository).save(sampleUser);
+    }
+
+    @Test
+    @DisplayName("Cập nhật uncheck mặc định trên địa chỉ đang mặc định thì hệ thống vẫn giữ nguyên isDefault=true")
+    void testUpdateAddressCannotUnsetDefaultDirectly() {
+        when(userRepository.findByKeycloakId("keycloak-user-uuid-123")).thenReturn(Optional.of(sampleUser));
+        sampleAddress.setIsDefault(true);
+        when(userAddressRepository.findByIdAndUserId(100L, 1L)).thenReturn(Optional.of(sampleAddress));
+        when(userAddressRepository.save(sampleAddress)).thenReturn(sampleAddress);
+        when(userAddressMapper.toDto(sampleAddress)).thenReturn(sampleResponseDto);
+
+        AddressRequestDto updateDto = AddressRequestDto.builder()
+                .recipientName("Nguyễn Văn A")
+                .phoneNumber("0912345678")
+                .province("Hà Nội")
+                .district("Quận Cầu Giấy")
+                .ward("Phường Dịch Vọng Hậu")
+                .streetAddress("Số 12 Duy Tân")
+                .isDefault(false) // Cố tình uncheck mặc định
+                .build();
+
+        userAddressService.updateAddress(sampleJwt, 100L, updateDto);
+
+        assertTrue(sampleAddress.getIsDefault(), "Phải giữ nguyên isDefault=true để tránh trường hợp không có địa chỉ mặc định");
+        verify(userAddressRepository, never()).unsetDefaultAddressForUser(anyLong());
+        verify(userRepository).save(sampleUser);
+    }
+
+    @Test
+    @DisplayName("Cập nhật địa chỉ ném ResourceNotFoundException khi ID không tồn tại hoặc không thuộc user")
+    void testUpdateAddressNotFound() {
+        when(userRepository.findByKeycloakId("keycloak-user-uuid-123")).thenReturn(Optional.of(sampleUser));
+        when(userAddressRepository.findByIdAndUserId(999L, 1L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> userAddressService.updateAddress(sampleJwt, 999L, sampleRequestDto));
+    }
+
+    @Test
+    @DisplayName("Xóa địa chỉ không phải mặc định thì không kích hoạt gán fallback hay đổi địa chỉ user")
+    void testDeleteNonDefaultAddress() {
+        when(userRepository.findByKeycloakId("keycloak-user-uuid-123")).thenReturn(Optional.of(sampleUser));
+        sampleAddress.setIsDefault(false);
+        when(userAddressRepository.findByIdAndUserId(100L, 1L)).thenReturn(Optional.of(sampleAddress));
+
+        userAddressService.deleteAddress(sampleJwt, 100L);
+
+        verify(userAddressRepository).delete(sampleAddress);
+        verify(userAddressRepository, never()).findFirstByUserIdAndIdNotOrderByUpdatedAtDesc(anyLong(), anyLong());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("Xóa địa chỉ mặc định khi đó là địa chỉ duy nhất thì xóa địa chỉ trong User (setAddress null)")
+    void testDeleteDefaultAddressWhenOnlyAddress() {
+        when(userRepository.findByKeycloakId("keycloak-user-uuid-123")).thenReturn(Optional.of(sampleUser));
+        sampleAddress.setIsDefault(true);
+        when(userAddressRepository.findByIdAndUserId(100L, 1L)).thenReturn(Optional.of(sampleAddress));
+        when(userAddressRepository.findFirstByUserIdAndIdNotOrderByUpdatedAtDesc(1L, 100L))
+                .thenReturn(Optional.empty());
+
+        userAddressService.deleteAddress(sampleJwt, 100L);
+
+        verify(userAddressRepository).delete(sampleAddress);
+        assertNull(sampleUser.getAddress());
+        verify(userRepository).save(sampleUser);
+    }
+
+    @Test
+    @DisplayName("Xóa địa chỉ ném ResourceNotFoundException khi ID không tồn tại hoặc không thuộc user")
+    void testDeleteAddressNotFound() {
+        when(userRepository.findByKeycloakId("keycloak-user-uuid-123")).thenReturn(Optional.of(sampleUser));
+        when(userAddressRepository.findByIdAndUserId(999L, 1L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> userAddressService.deleteAddress(sampleJwt, 999L));
+    }
 }

@@ -1,5 +1,5 @@
 # TEU MOBILE - BÁO CÁO TỔNG QUAN DỰ ÁN & HƯỚNG DẪN VẬN HÀNH
-> Ngày cập nhật: 04/11/2026 | Nhánh Git: `develop` | Tác giả: lovanky & Antigravity Assistant
+> Ngày cập nhật: 18/11/2026 | Nhánh Git: `develop` | Tác giả: lovanky & Antigravity Assistant
 
 ---
 
@@ -10,10 +10,12 @@ Dự án **Teu Mobile** là một nền tảng thương mại điện tử chuy�
 ### Công nghệ cốt lõi:
 - **Backend**: Java 21, Spring Boot 3.3.5, Maven.
 - **Database**: Microsoft SQL Server 2022 (quản lý di chuyển schema bằng **Flyway**).
-- **Identity Provider (IdP)**: **Keycloak 26 (Quarkus)** kết hợp **Spring Cloud OpenFeign** và **Spring Security OAuth2 Resource Server**.
+- **Identity Provider (IdP)**: **Keycloak 26 (Quarkus)** kết hợp **Spring Security OAuth2 Resource Server** và **Authorization Code Flow with PKCE**.
+- **Lưu trữ hình ảnh**: **Cloudinary SDK** (Direct unsigned/signed uploads, tối ưu hóa avatar, CDN toàn cầu).
+- **Dữ liệu hành chính**: Phân cấp hành chính Việt Nam 3 cấp (Tỉnh/Thành phố, Quận/Huyện, Phường/Xã) tích hợp Open API hành chính chuẩn.
 - **Mapping DTO**: **MapStruct 1.5.5** kết hợp **Lombok** (xử lý compile-time, zero reflection).
-- **Frontend**: **React 18**, **Vite 6**, **Tailwind CSS 3.4**, **Lucide Icons**, **Axios**, **React Router DOM 6**.
-- **Testing**: **JUnit 5**, **Mockito**, **Spring Security Test**, **MockMvc** (28/28 tests passed).
+- **Frontend**: **React 18**, **Vite 6**, **Tailwind CSS 3.4**, **Lucide Icons**, **Axios**, **React Router DOM 6**, **keycloak-js 26**.
+- **Testing & Code Coverage**: **JUnit 5**, **Mockito**, **Spring Security Test**, **MockMvc** (84/84 tests passed 100%) kết hợp **JaCoCo 0.8.12** (độ bao phủ dòng code **90%**, chỉ tiêu tối thiểu tự động **80%**).
 
 ---
 
@@ -31,11 +33,11 @@ Dự án **Teu Mobile** là một nền tảng thương mại điện tử chuy�
 
 ## 3. Kiến Trúc Hạ Tầng (Docker Compose)
 
-File `docker-compose.yml` tại thư mục gốc quản lý 3 dịch vụ nền tảng:
+File `docker-compose.yml` tại thư mục gốc quản lý các dịch vụ nền tảng:
 1. **`sqlserver`**: Microsoft SQL Server 2022 Developer Edition, dữ liệu lưu vào volume `mssql_data`.
 2. **`sqlserver-init`**: Container phụ trợ tự động chạy script `docker/sqlserver/init-db.sql` để tạo sẵn database `teu_mobile_db`.
 3. **`keycloak-db`**: PostgreSQL 16 Alpine làm DB riêng cho Keycloak (tách biệt dữ liệu tài khoản với dữ liệu bán hàng).
-4. **`keycloak`**: Keycloak 26.1.3 chạy chế độ `start-dev`, map cổng `8180:8080` để không đụng độ cổng `8080` của Spring Boot.
+4. **`keycloak`**: Keycloak 26.1.3 chạy chế độ `start-dev`, map cổng `8180:8080` để không đụng độ cổng `8080` của Spring Boot, tích hợp sẵn Theme Teu Mobile và Google Identity Provider.
 
 ---
 
@@ -47,35 +49,41 @@ File `docker-compose.yml` tại thư mục gốc quản lý 3 dịch vụ nền 
 - `@ValidEmail`: Kiểm tra định dạng email theo chuẩn RFC 5322.
 
 ### B. Cơ Sở Dữ Liệu & Flyway Migration
-- `db/migration/V1__create_users_table.sql`: Tạo bảng `users` (`id`, `keycloak_id`, `username`, `email`, `full_name`, `phone_number`, `address`, `created_at`, `updated_at`).
+- `db/migration/V1__create_users_table.sql`: Tạo bảng `users` (`id`, `keycloak_id`, `username`, `email`, `full_name`, `phone_number`, `address`, `avatar_url`, `created_at`, `updated_at`).
+- `db/migration/V2__create_user_addresses_table.sql`: Tạo bảng `user_addresses` quản lý sổ địa chỉ giao hàng (`id`, `user_id`, `recipient_name`, `phone_number`, `province`, `district`, `ward`, `street_address`, `full_address`, `address_type`, `is_default`, `notes`, `created_at`, `updated_at`).
 - Hibernate đặt chế độ `ddl-auto: validate` nhường toàn quyền quản lý schema cho Flyway.
 
 ### C. MapStruct DTO Mapping
-- `UserMapper`: Chuyển đổi siêu tốc giữa `User` Entity và các DTOs (`UserProfileResponseDto`, `UserUpdateRequestDto`), tự động bỏ qua các trường null khi cập nhật.
+- `UserMapper`: Chuyển đổi siêu tốc giữa `User` Entity và `UserProfileResponseDto`, tự động xử lý cập nhật các trường không null.
+- `UserAddressMapper`: Chuyển đổi hai chiều giữa `UserAddress` Entity và `AddressRequestDto` / `AddressResponseDto`.
 
-### D. Tích hợp OpenFeign gọi Keycloak (Authentication Gateway)
-Backend đóng vai trò Gateway nhận request từ React và dùng OpenFeign gọi Keycloak:
-- `KeycloakAuthFeignClient`:
-  - `POST /realms/{realm}/protocol/openid-connect/token`: Đăng nhập cấp phát JWT (`grant_type=password`) và làm mới token (`grant_type=refresh_token`).
-  - `POST /realms/{realm}/protocol/openid-connect/logout`: Thu hồi session.
-- `KeycloakAdminFeignClient`:
-  - `POST /admin/realms/{realm}/users`: Tạo tài khoản người dùng trực tiếp trên Keycloak qua Service Access Token được cấp bằng `client_credentials` (`client_id` và `client_secret` của Realm ứng dụng).
-  - `GET /admin/realms/{realm}/users`: Tìm kiếm người dùng.
-- `AuthService`: Tự động đồng bộ tài khoản vừa tạo trên Keycloak vào bảng `users` của SQL Server.
+### D. Kiến Trúc Xác Thực (Keycloak OIDC & PKCE)
+- Phía Frontend sử dụng thư viện `keycloak-js` để thực hiện chuẩn **Authorization Code Flow with PKCE**, đảm bảo bảo mật tối đa cho Single Page App (SPA).
+- Phía Backend đóng vai trò **OAuth2 Resource Server** xác thực Access Token thông qua `KeycloakJwtAuthenticationConverter`, phân giải claim `realm_access.roles` thành các GrantedAuthority `ROLE_*` của Spring Security.
+- Tự động đồng bộ tài khoản người dùng từ Keycloak JWT và Google Identity Provider vào bảng `users` của SQL Server.
 
-### E. Danh sách REST API Endpoints
+### E. Tích Hợp Cloudinary
+- Tích hợp `CloudinaryService` cung cấp API cấp phát chữ ký bảo mật (Signature, Timestamp, API Key) cho phép Frontend tải ảnh trực tiếp lên Cloudinary.
+- Tự động xóa ảnh đại diện cũ trên Cloudinary khi người dùng tải ảnh mới để tiết kiệm dung lượng lưu trữ.
+- Hỗ trợ đồng bộ tự động URL avatar từ tài khoản Google OAuth2 sang cơ sở dữ liệu.
 
-#### Authentication (`/api/auth`) - Không cần Token:
-- `POST /api/auth/register`: Đăng ký tài khoản mới (Body: `RegisterRequestDto`).
-- `POST /api/auth/login`: Đăng nhập lấy JWT Access Token và Refresh Token (Body: `LoginRequestDto`).
-- `POST /api/auth/refresh`: Làm mới token (Body: `RefreshTokenRequestDto`).
-- `POST /api/auth/logout`: Đăng xuất.
+### F. Danh Sách REST API Endpoints
 
 #### User Profile (`/api/users`) - Yêu cầu Bearer Token:
 - `GET /api/users/me`: Lấy thông tin hồ sơ của tài khoản đang đăng nhập.
-- `PUT /api/users/me`: Cập nhật thông tin cá nhân (Họ tên, SĐT, Địa chỉ).
-- `POST /api/users/sync`: Đồng bộ thủ công từ token vào SQL Server.
+- `PUT /api/users/me`: Cập nhật thông tin cá nhân (Họ tên, SĐT, Địa chỉ cơ bản).
+- `POST /api/users/sync`: Đồng bộ tài khoản từ Token Keycloak/Google vào SQL Server.
+- `GET /api/users/avatar/signature`: Lấy chữ ký bảo mật để tải ảnh trực tiếp lên Cloudinary.
+- `PATCH /api/users/me/avatar`: Cập nhật URL ảnh đại diện sau khi upload Cloudinary thành công.
 - `GET /api/users/{id}`: Xem thông tin user theo ID (Yêu cầu quyền `ROLE_ADMIN`).
+
+#### Sổ Địa Chỉ Nhận Hàng (`/api/users/addresses`) - Yêu cầu Bearer Token:
+- `GET /api/users/addresses`: Lấy toàn bộ danh sách địa chỉ giao hàng của người dùng.
+- `GET /api/users/addresses/{id}`: Xem chi tiết một địa chỉ theo ID.
+- `POST /api/users/addresses`: Thêm địa chỉ mới vào sổ địa chỉ (tự động xử lý địa chỉ mặc định đầu tiên).
+- `PUT /api/users/addresses/{id}`: Chỉnh sửa thông tin địa chỉ nhận hàng.
+- `DELETE /api/users/addresses/{id}`: Xóa địa chỉ khỏi sổ địa chỉ (tự động chuyển giao quyền mặc định nếu xóa địa chỉ mặc định).
+- `PATCH /api/users/addresses/{id}/default`: Đặt một địa chỉ làm địa chỉ mặc định nhận hàng.
 
 #### Public Endpoints:
 - `GET /api/public/health`: Kiểm tra trạng thái hoạt động của backend.
@@ -84,34 +92,54 @@ Backend đóng vai trò Gateway nhận request từ React và dùng OpenFeign g�
 
 ## 5. Kết Quả Kiểm Thử (Unit & Integration Tests)
 
-Tổng cộng **28/28 tests passed 100%** qua lệnh `mvn test`:
+Tổng cộng **84/84 tests passed 100%** qua lệnh `mvn test`:
 1. `ValidatorTest` (6 tests): Kiểm tra số điện thoại, email, username hợp lệ và không hợp lệ.
 2. `KeycloakJwtAuthenticationConverterTest` (2 tests): Kiểm tra bóc tách `realm_access.roles` sang quyền `ROLE_...`.
 3. `UserMapperTest` (2 tests): Kiểm tra MapStruct chuyển đổi DTO và bảo toàn trường dữ liệu.
-4. `UserServiceTest` (4 tests): Kiểm thử logic nghiệp vụ user với Mockito.
-5. `AuthServiceTest` (4 tests): Kiểm thử logic OpenFeign đăng nhập, đăng ký, refresh token.
-6. `UserControllerTest` (6 tests): MockMvc test bảo mật, 401 khi thiếu token, 403 khi thiếu role Admin.
-7. `AuthControllerTest` (4 tests): MockMvc test luồng đăng nhập/đăng ký và bắt lỗi validation.
+4. `UserAddressMapperTest` (4 tests): Kiểm tra chuyển đổi 2 chiều giữa UserAddress Entity và Request/Response DTO, trích xuất userId và bảo toàn dữ liệu.
+5. `GlobalExceptionHandlerTest` (5 tests): Kiểm thử bộ xử lý ngoại lệ tập trung (404 Not Found, 400 Bad Request, 403 Forbidden, 500 Internal Error, Validation Errors map).
+6. `UserServiceTest` (11 tests): Kiểm thử toàn bộ nghiệp vụ user, cập nhật thông tin cá nhân, xử lý avatar Cloudinary, đồng bộ Google avatar và xử lý ngoại lệ not found.
+7. `UserAddressServiceTest` (15 tests): Kiểm thử toàn diện nghiệp vụ sổ địa chỉ: tạo mới (địa chỉ đầu/phụ, kiểm soát tối đa 20), cập nhật (đổi mặc định, chặn uncheck mặc định), xóa (địa chỉ phụ, địa chỉ cuối cùng, gán fallback), chuyển mặc định và kiểm soát quyền sở hữu.
+8. `CloudinaryServiceTest` (6 tests): Kiểm thử khởi tạo chữ ký signature, tải ảnh từ URL Google, xóa ảnh trên cloud.
+9. `AuthServiceTest` (6 tests): Kiểm thử logic xác thực, đăng ký thành công, xử lý trùng lặp tài khoản, fallback khi thiếu Location Header và xử lý xung đột IdP.
+10. `PublicControllerTest` (1 test): MockMvc test endpoint công khai `/api/public/health`.
+11. `UserControllerTest` (13 tests): MockMvc test bảo mật, lấy hồ sơ, đồng bộ user (`/api/users/sync`), cập nhật hồ sơ, cập nhật avatar, xin chữ ký Cloudinary, phân quyền ADMIN.
+12. `UserAddressControllerTest` (11 tests): MockMvc test toàn bộ luồng REST API sổ địa chỉ: danh sách, chi tiết theo ID, thêm mới, sửa, xóa, gán mặc định và bắt lỗi validation/not found.
+13. `AuthControllerTest` (2 tests): MockMvc test luồng đăng ký tài khoản và bắt lỗi payload validation.
+
+### Báo Cáo Đo Lường Độ Bao Phủ Mã Nguồn (JaCoCo Code Coverage)
+- **Công cụ**: `jacoco-maven-plugin:0.8.12` tích hợp trực tiếp vào vòng đời Maven (phase `test`).
+- **Độ bao phủ toàn dự án**: **89% Instruction Coverage** | **90% Line Coverage** (467/519 dòng).
+- **Chi tiết độ bao phủ theo Package**:
+  - `com.teumobile.controller`: **100%** (Tất cả Controllers đều được bao phủ 100%).
+  - `com.teumobile.exception`: **100%** (Tất cả Exception Handlers đều được bao phủ 100%).
+  - `com.teumobile.security`: **96%** (Bộ chuyển đổi Token Keycloak và phân quyền).
+  - `com.teumobile.service.impl`: **87%** (Nghiệp vụ UserService, UserAddressService, CloudinaryService, AuthService).
+  - `com.teumobile.validation`: **84%** (Các Custom Validators).
+- **Quy tắc kiểm soát chất lượng (Quality Gate Check)**: Đặt giới hạn tối thiểu **80% Line Coverage** (`BUNDLE` level). Nếu độ bao phủ dưới 80%, bản build Maven sẽ tự động bị chặn và báo lỗi `BUILD FAILURE`.
+- **Đường dẫn báo cáo HTML trực quan**: `backend/target/site/jacoco/index.html`.
 
 ---
 
 ## 6. Thiết Kế UI/UX & Frontend (React + Tailwind CSS)
 
-Thiết kế dựa trên file Figma `figma/login_page.png` với triết lý **Minimalist High-Tech with Dynamic Energy**:
+Thiết kế dựa trên file Figma `figma/login_page.png` và quy chuẩn thương hiệu Teu Mobile:
 - **Bảng màu**: Đỏ Coral (`#EA384D`) làm điểm nhấn hành động, chữ đen Slate 900, nền trắng tinh khiết kết hợp xám khói Slate 100.
 - **Bo góc**: Mềm mại kiểu công nghệ hiện đại `rounded-xl` (12px) đến `rounded-2xl` (16px).
-- **Atomic Components**:
-  - `Button.jsx`: Nút primary đỏ coral, nút outline trắng viền xám cho Google, nút ghost.
-  - `Input.jsx`: Bo góc lớn `rounded-xl`, focus ring đỏ coral, toggle ẩn/hiện mật khẩu, hiển thị thông báo lỗi.
-  - `Checkbox.jsx`: Kiểu dáng checkbox *Remember me*.
-  - `AuthLayout.jsx`: Bố cục chia đôi (Split-screen) với Artwork năng động mô phỏng chính xác Figma.
-- **Các màn hình đã hoàn thiện**:
-  - `LoginPage.jsx`: Tái hiện 100% Figma (`WELCOME BACK`, Email, Password, Remember me, Forgot password, Sign in, Sign in with Google, Sign up link).
-  - `RegisterPage.jsx`: Thừa hưởng cùng ngôn ngữ thiết kế (`CREATE ACCOUNT`).
-  - `HomePage.jsx` & `Navbar.jsx`: Trang chủ mua sắm điện thoại (iPhone, Galaxy) và phụ kiện (sạc GaN, tai nghe AirPods), giỏ hàng, dropdown user.
-  - `ProfilePage.jsx`: Xem và cập nhật thông tin cá nhân đồng bộ với backend.
-- **Dịch vụ**: `api.js` (Axios interceptor JWT) và `AuthContext.jsx` (quản lý trạng thái đăng nhập).
-- Build production: `npm run build` hoàn tất chỉ trong **2.27s**, không lỗi.
+- **Hệ thống Components & Pages**:
+  - `Navbar.jsx`: Thanh điều hướng chứa Logo thương hiệu, menu sản phẩm, giỏ hàng và User Avatar Dropdown.
+  - `LoginPage.jsx` & `RegisterPage.jsx`: Đăng nhập/đăng ký qua Keycloak PKCE và Google One-tap.
+  - `ProfilePage.jsx`: Trung tâm quản lý tài khoản người dùng:
+    - Tab 1: **Thông tin cá nhân** (Họ tên, SĐT, Email), upload trực tiếp ảnh đại diện lên Cloudinary với preview, loading spinner và đồng bộ avatar Google.
+    - Tab 2: **Sổ địa chỉ nhận hàng** với đầy đủ tính năng: danh sách địa chỉ, ghim địa chỉ mặc định, nhãn phân loại Nhà riêng / Văn phòng.
+  - `AddressList.jsx`, `AddressCard.jsx`, `AddressModal.jsx`: Bộ giao diện sổ địa chỉ với phân cấp hành chính 3 cấp (Tỉnh/Thành -> Quận/Huyện -> Phường/Xã) tự động lọc theo cấp cha, tự động format địa chỉ đầy đủ.
+  - `HomePage.jsx`: Trang chủ mua sắm flagship phone và phụ kiện cao cấp.
+- **Services**:
+  - `keycloak.js`: Quản lý phiên OIDC, silent refresh token, login, logout.
+  - `api.js`: Axios instance tự động đính kèm Bearer JWT và xử lý lỗi xác thực.
+  - `addressService.js`: Gọi các API backend cho sổ địa chỉ.
+  - `locationService.js`: Tích hợp dữ liệu hành chính Việt Nam với bộ nhớ đệm (caching).
+  - `cloudinaryService.js`: Upload ảnh trực tiếp từ trình duyệt lên Cloudinary qua Secure Signature.
 
 ---
 
@@ -139,7 +167,7 @@ mvn spring-boot:run
 ```bash
 cd frontend
 npm run dev
-# Mở trình duyệt truy cập: http://localhost:5173/login
+# Mở trình duyệt truy cập: http://localhost:5173
 ```
 
 ---
@@ -161,36 +189,38 @@ teu-mobile/
 ├── figma/
 │   └── login_page.png          # Ảnh thiết kế gốc giao diện Đăng nhập
 ├── backend/                    # Spring Boot 3 + Maven
-│   ├── pom.xml                 # Cấu hình dependencies (Flyway, MapStruct, OpenFeign, OAuth2)
+│   ├── pom.xml                 # Cấu hình dependencies (Flyway, MapStruct, Cloudinary, OAuth2, JaCoCo)
 │   └── src/
 │       ├── main/
 │       │   ├── java/com/teumobile/
 │       │   │   ├── TeuMobileApplication.java
-│       │   │   ├── client/       # OpenFeign Clients (Auth, Admin)
-│       │   │   ├── config/       # SecurityConfig, KeycloakProperties, FeignForm
-│       │   │   ├── controller/   # AuthController, UserController, PublicController
-│       │   │   ├── dto/          # DTOs (Auth, User, Keycloak representations)
-│       │   │   ├── entity/       # User Entity (JPA)
+│       │   │   ├── client/       # OpenFeign Clients (Keycloak Admin)
+│       │   │   ├── config/       # SecurityConfig, CloudinaryConfig, FeignConfig
+│       │   │   ├── controller/   # UserController, UserAddressController, PublicController
+│       │   │   ├── dto/          # DTOs (Profile, Address, Cloudinary, Keycloak)
+│       │   │   ├── entity/       # User, UserAddress, AddressType (JPA)
 │       │   │   ├── exception/    # GlobalExceptionHandler, ResourceNotFoundException
-│       │   │   ├── mapper/       # UserMapper (MapStruct)
-│       │   │   ├── repository/   # UserRepository
+│       │   │   ├── mapper/       # UserMapper, UserAddressMapper (MapStruct)
+│       │   │   ├── repository/   # UserRepository, UserAddressRepository
 │       │   │   ├── security/     # KeycloakJwtAuthenticationConverter
-│       │   │   ├── service/      # AuthService, UserService và implementations
+│       │   │   ├── service/      # UserService, UserAddressService, CloudinaryService
 │       │   │   └── validation/   # Custom Validators (Phone, Username, Email)
 │       │   └── resources/
 │       │       ├── application.yaml
 │       │       └── db/migration/
-│       │           └── V1__create_users_table.sql
-│       └── test/                 # 28 Unit & Integration tests
+│       │           ├── V1__create_users_table.sql
+│       │           └── V2__create_user_addresses_table.sql
+│       └── test/                 # 84 Unit & Integration tests
 └── frontend/                   # React 18 + Vite + Tailwind CSS
     ├── package.json
     ├── tailwind.config.js
     ├── vite.config.js
     └── src/
         ├── components/
+        │   ├── address/        # AddressCard, AddressList, AddressModal
         │   ├── layout/         # AuthLayout (Split-screen), Navbar
         │   └── ui/             # Button, Input, Checkbox
         ├── context/            # AuthContext.jsx
         ├── pages/              # LoginPage, RegisterPage, HomePage, ProfilePage
-        └── services/           # api.js (Axios JWT Interceptor)
+        └── services/           # api.js, keycloak.js, addressService.js, locationService.js, cloudinaryService.js
 ```

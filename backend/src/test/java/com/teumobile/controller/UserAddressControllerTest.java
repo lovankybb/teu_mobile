@@ -7,6 +7,7 @@ import com.teumobile.dto.AddressRequestDto;
 import com.teumobile.dto.AddressResponseDto;
 import com.teumobile.entity.AddressType;
 import com.teumobile.exception.GlobalExceptionHandler;
+import com.teumobile.exception.ResourceNotFoundException;
 import com.teumobile.security.KeycloakJwtAuthenticationConverter;
 import com.teumobile.service.UserAddressService;
 import org.junit.jupiter.api.DisplayName;
@@ -23,6 +24,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -187,5 +189,74 @@ class UserAddressControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.isDefault").value(true));
+    }
+
+    @Test
+    @DisplayName("Lấy chi tiết một địa chỉ theo ID thành công trả về 200 OK")
+    void testGetAddressByIdSuccess() throws Exception {
+        AddressResponseDto responseDto = AddressResponseDto.builder()
+                .id(100L)
+                .recipientName("Trần Văn B")
+                .phoneNumber("0988776655")
+                .fullAddress("Số 1 Cầu Giấy, Dịch Vọng, Cầu Giấy, Hà Nội")
+                .build();
+
+        when(userAddressService.getAddressById(any(), eq(100L))).thenReturn(responseDto);
+
+        mockMvc.perform(get("/api/users/addresses/100")
+                        .with(jwt().jwt(builder -> builder.subject("keycloak-sub-123"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.id").value(100L))
+                .andExpect(jsonPath("$.data.recipientName").value("Trần Văn B"));
+    }
+
+    @Test
+    @DisplayName("Lấy chi tiết địa chỉ khi ID không tồn tại trả về 404 Not Found")
+    void testGetAddressByIdNotFound() throws Exception {
+        when(userAddressService.getAddressById(any(), eq(999L)))
+                .thenThrow(new ResourceNotFoundException("Không tìm thấy địa chỉ với ID: 999"));
+
+        mockMvc.perform(get("/api/users/addresses/999")
+                        .with(jwt().jwt(builder -> builder.subject("keycloak-sub-123"))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value("Không tìm thấy địa chỉ với ID: 999"));
+    }
+
+    @Test
+    @DisplayName("Thêm địa chỉ khi đã đạt tối đa 20 địa chỉ trả về 400 Bad Request")
+    void testCreateAddressLimitExceeded() throws Exception {
+        AddressRequestDto requestDto = AddressRequestDto.builder()
+                .recipientName("Trần Văn B")
+                .phoneNumber("0988776655")
+                .province("Hà Nội")
+                .district("Cầu Giấy")
+                .ward("Dịch Vọng")
+                .streetAddress("Số 1 Cầu Giấy")
+                .build();
+
+        when(userAddressService.createAddress(any(), any(AddressRequestDto.class)))
+                .thenThrow(new IllegalArgumentException("Bạn chỉ có thể lưu tối đa 20 địa chỉ nhận hàng"));
+
+        mockMvc.perform(post("/api/users/addresses")
+                        .with(jwt().jwt(builder -> builder.subject("keycloak-sub-123")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value("Bạn chỉ có thể lưu tối đa 20 địa chỉ nhận hàng"));
+    }
+
+    @Test
+    @DisplayName("Xóa địa chỉ khi ID không tồn tại trả về 404 Not Found")
+    void testDeleteAddressNotFound() throws Exception {
+        doThrow(new ResourceNotFoundException("Không tìm thấy địa chỉ với ID: 999"))
+                .when(userAddressService).deleteAddress(any(), eq(999L));
+
+        mockMvc.perform(delete("/api/users/addresses/999")
+                        .with(jwt().jwt(builder -> builder.subject("keycloak-sub-123"))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false));
     }
 }

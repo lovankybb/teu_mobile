@@ -27,7 +27,27 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null); // Profile từ backend
   const [loading, setLoading] = useState(true); // Đang khởi tạo Keycloak
+  const [roles, setRoles] = useState([]); // Danh sách roles từ Keycloak
   const initialized = useRef(false); // Tránh init 2 lần (React StrictMode)
+
+  // ─── Trích xuất danh sách roles từ token Keycloak ───────────────────────
+  const extractRoles = useCallback(() => {
+    const realmRoles =
+      keycloak.tokenParsed?.realm_access?.roles ||
+      keycloak.realmAccess?.roles ||
+      [];
+    const resourceRoles = [];
+    if (keycloak.tokenParsed?.resource_access) {
+      Object.values(keycloak.tokenParsed.resource_access).forEach((res) => {
+        if (Array.isArray(res?.roles)) {
+          resourceRoles.push(...res.roles);
+        }
+      });
+    }
+    const allRoles = Array.from(new Set([...realmRoles, ...resourceRoles]));
+    setRoles(allRoles);
+    return allRoles;
+  }, []);
 
   // ─── Khởi tạo Keycloak một lần duy nhất khi app mount ───────────────────
   useEffect(() => {
@@ -44,6 +64,7 @@ export function AuthProvider({ children }) {
       })
       .then(async (authenticated) => {
         if (authenticated) {
+          extractRoles();
           await loadUserProfile();
         }
       })
@@ -53,6 +74,15 @@ export function AuthProvider({ children }) {
       .finally(() => {
         setLoading(false);
       });
+
+    // Cập nhật roles khi token được refresh hoặc xác thực thành công
+    keycloak.onAuthSuccess = () => {
+      extractRoles();
+    };
+
+    keycloak.onAuthRefreshSuccess = () => {
+      extractRoles();
+    };
 
     // Callback khi token được refresh tự động
     keycloak.onTokenExpired = () => {
@@ -67,7 +97,7 @@ export function AuthProvider({ children }) {
       clearSession();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [extractRoles]);
 
   // ─── Lấy profile từ backend sau khi xác thực thành công ─────────────────
   const loadUserProfile = useCallback(async () => {
@@ -106,6 +136,7 @@ export function AuthProvider({ children }) {
   // ─── Xóa state user (không logout Keycloak) ─────────────────────────────
   const clearSession = useCallback(() => {
     setUser(null);
+    setRoles([]);
   }, []);
 
   // ─── Đăng Nhập — redirect sang trang login của Keycloak ─────────────────
@@ -153,11 +184,35 @@ export function AuthProvider({ children }) {
     return updatedUser;
   }, []);
 
+  // ─── Kiểm tra phân quyền (RBAC) ──────────────────────────────────────────
+  const hasRole = useCallback(
+    (roleName) => {
+      if (!keycloak.authenticated) return false;
+      const target = roleName.toLowerCase().replace(/^role_/, "");
+      const currentRoles =
+        roles.length > 0
+          ? roles
+          : [
+              ...(keycloak.tokenParsed?.realm_access?.roles || []),
+              ...(keycloak.realmAccess?.roles || []),
+            ];
+      return currentRoles.some(
+        (r) => String(r).toLowerCase().replace(/^role_/, "") === target
+      );
+    },
+    [roles]
+  );
+
+  const isAdmin = Boolean(hasRole("ADMIN") || hasRole("admin"));
+
   const value = {
     user,
     setUser,
     loading,
     isAuthenticated: keycloak.authenticated ?? false,
+    isAdmin,
+    roles,
+    hasRole,
     keycloak, // Expose instance nếu cần dùng trực tiếp
     login,
     logout,

@@ -8,7 +8,7 @@
     <meta name="robots" content="noindex, nofollow">
 
     <title><#nested "header"> - TEU Mobile</title>
-    <link rel="icon" href="${url.resourcesPath}/img/logo.svg" type="image/svg+xml">
+    <link rel="icon" href="${url.resourcesPath}/img/logo.png" type="image/svg+xml">
 
     <#if properties.styles?has_content>
         <#list properties.styles?split(' ') as style>

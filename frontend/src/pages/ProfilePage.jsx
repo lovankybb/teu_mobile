@@ -215,9 +215,6 @@ export default function ProfilePage() {
                   Đã xác thực
                 </span>
               </div>
-              <p className="text-slate-400 text-sm mt-1">
-                Tài khoản đồng bộ bảo mật Keycloak: <span className="font-mono text-slate-600 text-xs font-semibold">@{user?.username}</span>
-              </p>
               <p className="text-slate-500 text-xs mt-2">
                 Nhấp vào ảnh đại diện hoặc biểu tượng máy ảnh để tải ảnh mới lên (JPG, PNG, WEBP, tối đa 5MB).
               </p>
@@ -278,7 +275,7 @@ export default function ProfilePage() {
                     label="Tên đăng nhập"
                     value={user?.username || ''}
                     disabled
-                    helperText="Tên đăng nhập được quản lý bởi Keycloak"
+                    // helperText="Tên đăng nhập được quản lý bởi Keycloak"
                   />
 
                   {/* Email (Readonly) */}
@@ -286,7 +283,7 @@ export default function ProfilePage() {
                     label="Địa chỉ Email"
                     value={user?.email || ''}
                     disabled
-                    helperText="Email định danh bảo mật OIDC"
+                    // helperText="Email định danh bảo mật OIDC"
                   />
                 </div>
 

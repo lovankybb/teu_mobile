@@ -11,6 +11,7 @@ import com.teumobile.entity.User;
 import com.teumobile.mapper.UserMapper;
 import com.teumobile.repository.UserRepository;
 import com.teumobile.service.impl.AuthServiceImpl;
+import feign.FeignException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -143,6 +144,111 @@ class AuthServiceTest {
         when(userRepository.existsByEmail("existing@gmail.com")).thenReturn(true);
 
         assertThrows(IllegalArgumentException.class, () -> authService.register(request));
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Đăng ký fallback tìm kiếm username khi Keycloak Admin không trả về Location Header")
+    void testRegisterFallbackWhenLocationHeaderNull() {
+        RegisterRequestDto request = RegisterRequestDto.builder()
+                .username("newcustomer")
+                .email("customer@gmail.com")
+                .password("password123")
+                .fullName("Nguyễn Khách Hàng")
+                .build();
+
+        when(userRepository.existsByUsername("newcustomer")).thenReturn(false);
+        when(userRepository.existsByEmail("customer@gmail.com")).thenReturn(false);
+
+        KeycloakTokenResponse adminTokenResponse = KeycloakTokenResponse.builder()
+                .accessToken("mock-admin-token")
+                .build();
+        when(authFeignClient.getToken(eq("teu-mobile-realm"), any(Map.class))).thenReturn(adminTokenResponse);
+
+        // Location Header bị null
+        ResponseEntity<Void> createResponse = ResponseEntity.ok().build();
+        when(adminFeignClient.createUser(eq("Bearer mock-admin-token"), eq("teu-mobile-realm"), any(KeycloakUserRepresentation.class)))
+                .thenReturn(createResponse);
+
+        // Fallback: search user by username
+        KeycloakUserRepresentation foundUser = KeycloakUserRepresentation.builder()
+                .id("fallback-user-uuid-999")
+                .username("newcustomer")
+                .build();
+        when(adminFeignClient.searchUsersByUsername("Bearer mock-admin-token", "teu-mobile-realm", "newcustomer", true))
+                .thenReturn(List.of(foundUser));
+
+        User savedUser = User.builder()
+                .id(1L)
+                .keycloakId("fallback-user-uuid-999")
+                .username("newcustomer")
+                .email("customer@gmail.com")
+                .build();
+        when(userRepository.save(any(User.class))).thenReturn(savedUser);
+        when(userMapper.toDto(savedUser)).thenReturn(UserProfileResponseDto.builder()
+                .id(1L)
+                .keycloakId("fallback-user-uuid-999")
+                .username("newcustomer")
+                .build());
+
+        UserProfileResponseDto result = authService.register(request);
+
+        assertNotNull(result);
+        assertEquals("fallback-user-uuid-999", result.getKeycloakId());
+        verify(adminFeignClient).searchUsersByUsername("Bearer mock-admin-token", "teu-mobile-realm", "newcustomer", true);
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("Đăng ký thất bại khi Keycloak ném FeignException.Conflict (tài khoản đã tồn tại trên IdP)")
+    void testRegisterFailsOnKeycloakConflict() {
+        RegisterRequestDto request = RegisterRequestDto.builder()
+                .username("existingidp")
+                .email("idp@gmail.com")
+                .password("password123")
+                .fullName("Người Dùng")
+                .build();
+
+        when(userRepository.existsByUsername("existingidp")).thenReturn(false);
+        when(userRepository.existsByEmail("idp@gmail.com")).thenReturn(false);
+
+        KeycloakTokenResponse adminTokenResponse = KeycloakTokenResponse.builder()
+                .accessToken("mock-admin-token")
+                .build();
+        when(authFeignClient.getToken(eq("teu-mobile-realm"), any(Map.class))).thenReturn(adminTokenResponse);
+
+        FeignException.Conflict conflictEx = mock(FeignException.Conflict.class);
+        when(adminFeignClient.createUser(eq("Bearer mock-admin-token"), eq("teu-mobile-realm"), any(KeycloakUserRepresentation.class)))
+                .thenThrow(conflictEx);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> authService.register(request));
+        assertTrue(ex.getMessage().contains("Tài khoản đã tồn tại trên hệ thống xác thực"));
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Đăng ký thất bại khi Keycloak gặp lỗi hệ thống khác")
+    void testRegisterFailsOnKeycloakGenericError() {
+        RegisterRequestDto request = RegisterRequestDto.builder()
+                .username("anyuser")
+                .email("any@gmail.com")
+                .password("password123")
+                .fullName("Người Dùng")
+                .build();
+
+        when(userRepository.existsByUsername("anyuser")).thenReturn(false);
+        when(userRepository.existsByEmail("any@gmail.com")).thenReturn(false);
+
+        KeycloakTokenResponse adminTokenResponse = KeycloakTokenResponse.builder()
+                .accessToken("mock-admin-token")
+                .build();
+        when(authFeignClient.getToken(eq("teu-mobile-realm"), any(Map.class))).thenReturn(adminTokenResponse);
+
+        when(adminFeignClient.createUser(eq("Bearer mock-admin-token"), eq("teu-mobile-realm"), any(KeycloakUserRepresentation.class)))
+                .thenThrow(new RuntimeException("Kết nối Keycloak bị ngắt"));
+
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> authService.register(request));
+        assertTrue(ex.getMessage().contains("Không thể tạo tài khoản trên hệ thống xác thực"));
         verify(userRepository, never()).save(any());
     }
 }

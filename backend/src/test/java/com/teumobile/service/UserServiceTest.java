@@ -212,4 +212,58 @@ class UserServiceTest {
 
         assertThrows(ResourceNotFoundException.class, () -> userService.getUserById(99L));
     }
+
+    @Test
+    @DisplayName("Lấy User theo ID tồn tại thành công")
+    void testGetUserByIdSuccess() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
+        when(userMapper.toDto(sampleUser)).thenReturn(sampleDto);
+
+        UserProfileResponseDto result = userService.getUserById(1L);
+
+        assertNotNull(result);
+        assertEquals(1L, result.getId());
+        assertEquals("nguyenvana", result.getUsername());
+    }
+
+    @Test
+    @DisplayName("Cập nhật thông tin ném ResourceNotFoundException khi không tìm thấy user trong CSDL")
+    void testUpdateProfileUserNotFound() {
+        when(userRepository.findByKeycloakId("keycloak-sub-123")).thenReturn(Optional.empty());
+
+        UserUpdateRequestDto updateDto = UserUpdateRequestDto.builder()
+                .fullName("Nguyễn Văn A")
+                .build();
+
+        assertThrows(ResourceNotFoundException.class, () -> userService.updateProfile(sampleJwt, updateDto));
+    }
+
+    @Test
+    @DisplayName("Cập nhật Avatar ném ResourceNotFoundException khi không tìm thấy user trong CSDL")
+    void testUpdateAvatarUserNotFound() {
+        when(userRepository.findByKeycloakId("keycloak-sub-123")).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> userService.updateAvatar(sampleJwt, "https://res.cloudinary.com/demo/image/upload/sample.jpg"));
+    }
+
+    @Test
+    @DisplayName("Cập nhật avatar mới khi avatar cũ không phải Cloudinary thì không gọi lệnh xóa Cloudinary")
+    void testUpdateAvatarWhenOldAvatarIsNotCloudinary() {
+        String googleAvatar = "https://lh3.googleusercontent.com/a/google_avatar.jpg";
+        sampleUser.setAvatarUrl(googleAvatar);
+
+        when(userRepository.findByKeycloakId("keycloak-sub-123")).thenReturn(Optional.of(sampleUser));
+        when(userRepository.save(sampleUser)).thenReturn(sampleUser);
+        when(userMapper.toDto(sampleUser)).thenReturn(sampleDto);
+        when(cloudinaryService.extractPublicId(googleAvatar)).thenReturn(null);
+
+        String newAvatarUrl = "https://res.cloudinary.com/teu-cloud/image/upload/v12345/teu-mobile/avatars/new_pic.jpg";
+        UserProfileResponseDto result = userService.updateAvatar(sampleJwt, newAvatarUrl);
+
+        assertNotNull(result);
+        assertEquals(newAvatarUrl, sampleUser.getAvatarUrl());
+        verify(userRepository, times(1)).save(sampleUser);
+        verify(cloudinaryService, never()).deleteImage(anyString());
+    }
 }

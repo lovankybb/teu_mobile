@@ -2,6 +2,8 @@ package com.teumobile.mapper;
 
 import com.teumobile.dto.UserProfileResponseDto;
 import com.teumobile.dto.UserUpdateRequestDto;
+import com.teumobile.dto.admin.UserAdminDetailResponseDto;
+import com.teumobile.dto.admin.UserAdminResponseDto;
 import com.teumobile.entity.User;
 import org.mapstruct.*;
 
@@ -19,6 +21,19 @@ public interface UserMapper {
      * Chuyển đổi danh sách User sang danh sách DTO
      */
     List<UserProfileResponseDto> toDtoList(List<User> users);
+
+    /**
+     * Chuyển đổi từ Entity User sang UserAdminResponseDto (dành cho Admin)
+     */
+    @Mapping(target = "roles", ignore = true)
+    UserAdminResponseDto toAdminDto(User user);
+
+    /**
+     * Chuyển đổi từ Entity User sang UserAdminDetailResponseDto (kèm chi tiết)
+     */
+    @Mapping(target = "roles", ignore = true)
+    @Mapping(target = "addresses", ignore = true)
+    UserAdminDetailResponseDto toAdminDetailDto(User user);
 
     /**
      * Cập nhật các trường không null từ UserUpdateRequestDto vào Entity User hiện có

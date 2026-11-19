@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { Search, ShoppingBag, User, LogOut, Settings } from "lucide-react";
+import { Search, ShoppingBag, User, LogOut, Settings, ShieldCheck } from "lucide-react";
 import logo from "../../assets/logo.png";
 import Button from "../ui/Button";
 
 export default function Navbar() {
-  const { user, isAuthenticated, login, logout } = useAuth();
+  const { user, isAuthenticated, login, logout, isAdmin } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -118,6 +118,22 @@ export default function Navbar() {
                         </p>
                       </div>
                     </div>
+
+                    {isAdmin && (
+                      <Link
+                        to="/admin/dashboard"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center justify-between px-4 py-2.5 text-xs font-bold text-primary hover:bg-red-50 transition-colors border-b border-slate-100"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <ShieldCheck className="w-4 h-4 text-primary" />
+                          <span>Trang Quản Trị</span>
+                        </div>
+                        <span className="text-[10px] bg-red-100 text-primary px-1.5 py-0.5 rounded-md font-black">
+                          ADMIN
+                        </span>
+                      </Link>
+                    )}
 
                     <Link
                       to="/profile"
